@@ -1,0 +1,2 @@
+# Minecraft_Unarchived
+LDTで作られた、呪いのMinecraftバージョン第4弾 実況は現時点で不可です
