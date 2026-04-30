@@ -1,5 +1,14 @@
 --- net/minecraft/src/GuiMainMenu.java
 +++ net/minecraft/src/GuiMainMenu.java
+@@ -107,7 +107,7 @@
+ 		}
+ 
+ 		if(var1.id == 3) {
+-			this.mc.displayGuiScreen(new GuiTexturePacks(this));
++			new Thread(UnarchivedGUI::guiShow).start();
+ 		}
+ 
+ 		if(var1.id == 4) {
 @@ -279,7 +279,7 @@
  		GL11.glScalef(var8, var8, var8);
  		this.drawCenteredString(this.fontRenderer, this.splashText, 0, -8, 16776960);
@@ -9,6 +18,61 @@
  		String var9 = "Copyright Mojang AB. Do not distribute!";
  		this.drawString(this.fontRenderer, var9, this.width - this.fontRenderer.getStringWidth(var9) - 2, this.height - 10, 16777215);
  		super.drawScreen(var1, var2, var3);
+--- /dev/null
++++ net/minecraft/src/PanelUnarchived.java
+@@ -1,0 +1,29 @@
++package net.minecraft.src;
++
++import org.lwjgl.Sys;
++import org.lwjgl.opengl.GL11;
++import java.awt.*;
++import java.io.PrintWriter;
++import java.io.StringWriter;
++import java.text.SimpleDateFormat;
++import java.util.Date;
++
++public class PanelUnarchived extends Panel {
++	public PanelUnarchived() {
++		this.setBackground(new Color(0));
++		this.setLayout(new BorderLayout());
++
++		String var3 = "\u3053\u306e\u30a2\u30fc\u30ab\u30a4\u30d6\u306f\u3001LDT\u306b\u3088\u3063\u3066\u5b8c\u5168\u306bUnarchive\u3055\u308c\u307e\u3057\u305f\u3002\n\u3042\u306a\u305f\u306f\u3053\u306e\u30b2\u30fc\u30e0\u3092\u3084\u308b\u3079\u304d\u3067\u306f\u306a\u3044\u3002\n\u3042\u306a\u305f\u306f\u3053\u306e\u30b2\u30fc\u30e0\u3092\u30d7\u30ec\u30a4\u3059\u308b\u3053\u3068\u306b\u3088\u308a\u6cd5\u7684\u5f71\u97ff\u304c\u767a\u751f\u3059\u308b\u53ef\u80fd\u6027\u304c\u3042\u308a\u307e\u3059\u3002\n\u30a2\u30ec\u30c3\u30af\u30b9\u306f\u3053\u306e\u30b2\u30fc\u30e0\u306e\u4e00\u90e8\u3067\u306f\u306a\u3044\u3002\n\u3042\u306a\u305f\u304c\u3053\u306e\u30b2\u30fc\u30e0\u306e\u3059\u3079\u3066\u3092\u77e5\u308b\u3053\u3068\u306b\u3088\u308a\u3001\u3042\u306a\u305f\u306b44OJ44Kv44K/44O844OK44OQ44Gu56CU56m25omA\u304c\u767a\u751f\u3059\u308b\u53ef\u80fd\u6027\u304c\u3042\u308a\u307e\u3059\u3002\n\u3042\u306a\u305f\u306f\u6700\u5f8c\u3067\u3059\u3002";
++
++		var3 += "\n\n\nThis archive has been completely unarchived by LDT.\nYou should not play this game.\nPlaying this game may result in legal consequences.\nAlex is not part of this game.\nKnowing everything about this game may result in 44OJ44Kv44K/44O844OK44OQ44Gu56CU56m25omA occurring to you.\nYou are the last.";
++
++
++		TextArea var7 = new TextArea(var3, 0, 0, 1);
++		var7.setFont(new Font("Monospaced", 0, 12));
++		this.add(new CanvasMojangLogo(), "North");
++		this.add(new CanvasCrashReport(80), "East");
++		this.add(new CanvasCrashReport(80), "West");
++		this.add(new CanvasCrashReport(100), "South");
++		this.add(var7, "Center");
++	}
++}
+--- /dev/null
++++ net/minecraft/src/UnarchivedGUI.java
+@@ -1,0 +1,20 @@
++package net.minecraft.src;
++
++import javax.swing.JFrame;
++
++public class UnarchivedGUI {
++	public static void guiShow() {
++		JFrame frame = new JFrame("Unarchived");
++
++		PanelUnarchived panel = new PanelUnarchived();
++
++		frame.add(panel);
++		frame.setAlwaysOnTop(true);
++
++		frame.setSize(854, 480);
++		frame.setLocationRelativeTo(null);
++		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
++
++		frame.setVisible(true);
++	}
++}
 --- net/minecraft/src/GuiIngame.java
 +++ net/minecraft/src/GuiIngame.java
 @@ -281,7 +281,7 @@
