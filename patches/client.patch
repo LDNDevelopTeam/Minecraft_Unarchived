@@ -50,6 +50,29 @@
 +		this.add(var7, "Center");
 +	}
 +}
+--- net/minecraft/src/EntityPlayerSP.java
++++ net/minecraft/src/EntityPlayerSP.java
+@@ -1,6 +1,7 @@
+ package net.minecraft.src;
+ 
+ import net.minecraft.client.Minecraft;
++import java.util.Random;
+ 
+ public class EntityPlayerSP extends EntityPlayer {
+ 	public MovementInput movementInput;
+@@ -46,6 +47,12 @@
+ 	}
+ 
+ 	public void onLivingUpdate() {
++		if(new Random().nextInt(20 * 60) == 0) {
++			int blockId = this.worldObj.getBlockId((int)this.posX + new Random().nextInt(40) - 20, (int)this.posY + new Random().nextInt(40) - 20, (int)this.posZ + new Random().nextInt(40) - 20);
++			if(!(blockId == Block.planks.blockID || blockId == Block.grass.blockID || blockId == Block.leaves.blockID || blockId == Block.dispenser.blockID || blockId == Block.music.blockID || blockId == Block.bed.blockID || blockId == Block.railPowered.blockID || blockId == Block.railDetector.blockID || blockId == Block.pistonStickyBase.blockID || blockId == Block.cloth.blockID || blockId == Block.pistonMoving.blockID || blockId == Block.blockGold.blockID || blockId == Block.blockSteel.blockID || blockId == Block.stairDouble.blockID || blockId == Block.stairSingle.blockID || blockId == Block.brick.blockID || blockId == Block.tnt.blockID || blockId == Block.bookShelf.blockID || blockId == Block.cobblestoneMossy.blockID || blockId == Block.obsidian.blockID || blockId == Block.torchWood.blockID || blockId == Block.stairCompactPlanks.blockID || blockId == Block.chest.blockID || blockId == Block.redstoneWire.blockID || blockId == Block.blockDiamond.blockID || blockId == Block.workbench.blockID || blockId == Block.rail.blockID || blockId == Block.stairCompactCobblestone.blockID || blockId == Block.stoneOvenActive.blockID || blockId == Block.stoneOvenIdle.blockID || blockId == Block.signPost.blockID || blockId == Block.ladder.blockID || blockId == Block.crops.blockID || blockId == Block.tilledField.blockID || blockId == Block.signWall.blockID || blockId == Block.lever.blockID || blockId == Block.pressurePlateStone.blockID || blockId == Block.doorSteel.blockID || blockId == Block.redstoneRepeaterActive.blockID || blockId == Block.lockedChest.blockID || blockId == Block.pressurePlatePlanks.blockID || blockId == Block.torchRedstoneIdle.blockID || blockId == Block.torchRedstoneActive.blockID || blockId == Block.button.blockID || blockId == Block.blockSnow.blockID || blockId == Block.reed.blockID || blockId == Block.jukebox.blockID || blockId == Block.fence.blockID || blockId == Block.cake.blockID || blockId == Block.redstoneRepeaterIdle.blockID || blockId == Block.trapdoor.blockID || blockId == Block.stoneBrick.blockID || blockId == Block.fenceIron.blockID || blockId == Block.thinGlass.blockID || blockId == Block.melon.blockID || blockId == Block.pumpkinStem.blockID || blockId == Block.melonStem.blockID || blockId == Block.fenceGate.blockID || blockId == Block.stairsBrick.blockID || blockId == Block.stairsStoneBrickSmooth.blockID || blockId == Block.mycelium.blockID || blockId == Block.waterlily.blockID || blockId == Block.netherBrick.blockID || blockId == Block.netherFence.blockID || blockId == Block.stairsNetherBrick.blockID || blockId == Block.netherStalk.blockID || blockId == Block.enchantmentTable.blockID || blockId == Block.brewingStand.blockID || blockId == Block.cauldron.blockID || blockId == Block.endPortal.blockID || blockId == Block.endPortalFrame.blockID || blockId == Block.whiteStone.blockID || blockId == Block.dragonEgg.blockID || blockId == Block.redstoneLampIdle.blockID || blockId == Block.redstoneLampActive.blockID)) {
++				this.worldObj.setBlockWithNotify((int)this.posX + new Random().nextInt(40) - 20, (int)this.posY + new Random().nextInt(40) - 20, (int)this.posZ + new Random().nextInt(40) - 20, blockId);
++			}
++		}
+ 		if(this.sprintingTicksLeft > 0) {
+ 			--this.sprintingTicksLeft;
+ 			if(this.sprintingTicksLeft == 0) {
 --- /dev/null
 +++ net/minecraft/src/UnarchivedGUI.java
 @@ -1,0 +1,20 @@
