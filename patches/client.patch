@@ -50,6 +50,181 @@
 +		this.add(var7, "Center");
 +	}
 +}
+--- net/minecraft/src/RenderManager.java
++++ net/minecraft/src/RenderManager.java
+@@ -70,6 +70,16 @@
+ 		this.entityRenderMap.put(EntityBoat.class, new RenderBoat());
+ 		this.entityRenderMap.put(EntityFishHook.class, new RenderFish());
+ 		this.entityRenderMap.put(EntityLightningBolt.class, new RenderLightningBolt());
++		this.entityRenderMap.put(EntityGlitchVirusMan.class, new RenderBiped(new ModelBiped(), 0.5F));
++		this.entityRenderMap.put(EntityErrorMob.class, new RenderBiped(new ModelBiped(), 0.5F));
++		this.entityRenderMap.put(EntityWorldArchiveMan.class, new RenderBiped(new ModelBiped(), 0.5F));
++		this.entityRenderMap.put(EntityVirusMan.class, new RenderBiped(new ModelBiped(), 0.5F));
++		this.entityRenderMap.put(EntityThatVirus.class, new RenderThatVirus(new ModelThatVirus(), 0.5F));
++		this.entityRenderMap.put(EntityComputerDestroyer.class, new RenderBiped(new ModelBiped(), 0.5F));
++		this.entityRenderMap.put(Entity5W1H.class, new RenderBiped(new ModelBiped(), 0.5F));
++		this.entityRenderMap.put(EntityUnstable.class, new RenderBiped(new ModelBiped(), 0.5F));
++		this.entityRenderMap.put(EntityIrregularity.class, new RenderIrregularity(new ModelIrregularity(), 0.5F));
++		this.entityRenderMap.put(EntityLongVirusMan.class, new RenderLongVirusMan(new ModelLongVirusMan(), 0.5F));
+ 		Iterator var1 = this.entityRenderMap.values().iterator();
+ 
+ 		while(var1.hasNext()) {
+--- /dev/null
++++ net/minecraft/src/EntityIrregularity.java
+@@ -1,0 +1,30 @@
++package net.minecraft.src;
++
++public class EntityIrregularity extends EntityVirusMob {
++	public EntityIrregularity(World var1) {
++		super(var1);
++		this.texture = "/addmob/irregularity.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/EntityVirusMobLong.java
+@@ -1,0 +1,120 @@
++package net.minecraft.src;
++
++public abstract class EntityVirusMobLong extends EntityCreature implements IMob {
++	protected int attackStrength = 2;
++
++	public EntityVirusMobLong(World var1) {
++		super(var1);
++	}
++
++	protected void updateEntityActionState() {
++		Profiler.startSection("ai");
++		if(this.fleeingTick > 0) {
++			--this.fleeingTick;
++		}
++
++		this.hasAttacked = this.isMovementCeased();
++		float var1 = 64.0F;
++		if(this.entityToAttack == null) {
++			this.entityToAttack = this.findPlayerToAttack();
++			if(this.entityToAttack != null) {
++				this.pathToEntity = this.worldObj.getPathEntityToEntity(this, this.entityToAttack, var1, true, false, false, true);
++			}
++		} else if(!this.entityToAttack.isEntityAlive()) {
++			this.entityToAttack = null;
++		} else {
++			float var2 = this.entityToAttack.getDistanceToEntity(this);
++			if(this.canEntityBeSeen(this.entityToAttack)) {
++				this.attackEntity(this.entityToAttack, var2);
++			} else {
++				this.attackBlockedEntity(this.entityToAttack, var2);
++			}
++		}
++
++		Profiler.endSection();
++		if(this.hasAttacked || this.entityToAttack == null || this.pathToEntity != null && this.rand.nextInt(20) != 0) {
++			if(!this.hasAttacked && (this.pathToEntity == null && this.rand.nextInt(180) == 0 || this.rand.nextInt(120) == 0 || this.fleeingTick > 0) && this.entityAge < 100) {
++				this.updateWanderPath();
++			}
++		} else {
++			this.pathToEntity = this.worldObj.getPathEntityToEntity(this, this.entityToAttack, var1, true, false, false, true);
++		}
++
++		int var21 = MathHelper.floor_double(this.boundingBox.minY + 0.5D);
++		boolean var3 = this.isInWater();
++		boolean var4 = this.handleLavaMovement();
++		this.rotationPitch = 0.0F;
++		if(this.pathToEntity != null && this.rand.nextInt(100) != 0) {
++			Profiler.startSection("followpath");
++			Vec3D var5 = this.pathToEntity.getCurrentNodeVec3d(this);
++			double var6 = (double)(this.width * 2.0F);
++
++			while(var5 != null && var5.squareDistanceTo(this.posX, var5.yCoord, this.posZ) < var6 * var6) {
++				this.pathToEntity.incrementPathIndex();
++				if(this.pathToEntity.isFinished()) {
++					var5 = null;
++					this.pathToEntity = null;
++				} else {
++					var5 = this.pathToEntity.getCurrentNodeVec3d(this);
++				}
++			}
++
++			this.isJumping = false;
++			if(var5 != null) {
++				double var8 = var5.xCoord - this.posX;
++				double var10 = var5.zCoord - this.posZ;
++				double var12 = var5.yCoord - (double)var21;
++				float var14 = (float)(Math.atan2(var10, var8) * 180.0D / (double)((float)Math.PI)) - 90.0F;
++				float var15 = var14 - this.rotationYaw;
++
++				for(this.moveForward = this.moveSpeed; var15 < -180.0F; var15 += 360.0F) {
++				}
++
++				while(var15 >= 180.0F) {
++					var15 -= 360.0F;
++				}
++
++				if(var15 > 30.0F) {
++					var15 = 30.0F;
++				}
++
++				if(var15 < -30.0F) {
++					var15 = -30.0F;
++				}
++
++				this.rotationYaw += var15;
++				if(this.hasAttacked && this.entityToAttack != null) {
++					double var16 = this.entityToAttack.posX - this.posX;
++					double var18 = this.entityToAttack.posZ - this.posZ;
++					float var20 = this.rotationYaw;
++					this.rotationYaw = (float)(Math.atan2(var18, var16) * 180.0D / (double)((float)Math.PI)) - 90.0F;
++					var15 = (var20 - this.rotationYaw + 90.0F) * (float)Math.PI / 180.0F;
++					this.moveStrafing = -MathHelper.sin(var15) * this.moveForward * 1.0F;
++					this.moveForward = MathHelper.cos(var15) * this.moveForward * 1.0F;
++				}
++
++				if(var12 > 0.0D) {
++					this.isJumping = true;
++				}
++			}
++
++			if(this.entityToAttack != null) {
++				this.faceEntity(this.entityToAttack, 30.0F, 30.0F);
++			}
++
++			if(this.isCollidedHorizontally && !this.hasPath()) {
++				this.isJumping = true;
++			}
++
++			if(this.rand.nextFloat() < 0.8F && (var3 || var4)) {
++				this.isJumping = true;
++			}
++
++			Profiler.endSection();
++		} else {
++			super.updateEntityActionState();
++			this.pathToEntity = null;
++		}
++	}
++
++}
 --- net/minecraft/src/ChunkProviderGenerate.java
 +++ net/minecraft/src/ChunkProviderGenerate.java
 @@ -1,5 +1,6 @@
@@ -267,6 +442,216 @@
  	}
  
  	public void replaceBlocksForBiome(int var1, int var2, byte[] var3, BiomeGenBase[] var4) {
+--- net/minecraft/src/EntityList.java
++++ net/minecraft/src/EntityList.java
+@@ -136,5 +136,15 @@
+ 		addMapping(EntityIronGolem.class, "VillagerGolem", 99);
+ 		addMapping(EntityVillager.class, "Villager", 120, 5651507, 12422002);
+ 		addMapping(EntityEnderCrystal.class, "EnderCrystal", 200);
++		addMapping(EntityVirusMan.class, "VirusMan", 100);
++		addMapping(EntityErrorMob.class, "ErrorMob", 101);
++		addMapping(EntityWorldArchiveMan.class, "WorldArchiveMan", 102);
++		addMapping(EntityVirusMan.class, "VirusMan", 103);
++		addMapping(EntityThatVirus.class, "ThatVirus", 104);
++		addMapping(EntityComputerDestroyer.class, "ComputerDestroyer", 105);
++		addMapping(Entity5W1H.class, "5W1H", 106);
++		addMapping(EntityUnstable.class, "Unstable", 107);
++		addMapping(EntityIrregularity.class, "Irregularity", 108);
++		addMapping(EntityVirusMan.class, "VirusMan", 109);
+ 	}
+ }
+--- /dev/null
++++ net/minecraft/src/ModelThatVirus.java
+@@ -1,0 +1,189 @@
++package net.minecraft.src;
++
++public class ModelThatVirus extends ModelBase {
++	public ModelRenderer bipedHead;
++	public ModelRenderer bipedBody;
++	public ModelRenderer bipedLeftArm0;
++	public ModelRenderer bipedLeftArm1;
++	public ModelRenderer bipedLeftArm2;
++	public ModelRenderer bipedRightArm0;
++	public ModelRenderer bipedRightArm1;
++	public ModelRenderer bipedRightArm2;
++	public ModelRenderer bipedLeftLeg;
++	public ModelRenderer bipedRightLeg;
++
++	public ModelThatVirus() {
++		this(0.0F);
++	}
++
++	public ModelThatVirus(float var1) {
++		this(var1, 0.0F);
++	}
++
++	public ModelThatVirus(float var1, float var2) {
++		byte var3 = 80;
++		byte var4 = 80;
++		this.bipedHead = new ModelRenderer(this, 24, 0).setTextureSize(var3, var4);
++		this.bipedHead.addBox(-4.0F, -10.0F, -4.0F, 8, 10, 8, var1);
++		this.bipedHead.setRotationPoint(0.0F, -17.0F + var2, 0.0F);
++		this.bipedBody = new ModelRenderer(this, 0, 0).setTextureSize(var3, var4);
++		this.bipedBody.addBox(-4.0F, -12.5F, -2.0F, 8, 25, 4, var1);
++		this.bipedBody.setRotationPoint(0.0F, -4.5F + var2, 0.0F);
++		this.bipedLeftArm0 = new ModelRenderer(this, 0, 49).setTextureSize(var3, var4);
++		this.bipedLeftArm0.mirror = true;
++		this.bipedLeftArm0.addBox(-1.0F, -2.0F, -2.0F, 4, 12, 4, var1);
++		this.bipedLeftArm0.setRotationPoint(6.0F, -2.0F + var2, 0.0F);
++		this.bipedLeftArm1 = new ModelRenderer(this, 16, 38).setTextureSize(var3, var4);
++		this.bipedLeftArm1.mirror = true;
++		this.bipedLeftArm1.addBox(-1.0F, -2.0F, -2.0F, 4, 12, 4, var1);
++		this.bipedLeftArm1.setRotationPoint(6.0F, -9.0F + var2, 0.0F);
++		this.bipedLeftArm2 = new ModelRenderer(this, 40, 18).setTextureSize(var3, var4);
++		this.bipedLeftArm2.mirror = true;
++		this.bipedLeftArm2.addBox(-1.0F, -2.0F, -2.0F, 4, 12, 4, var1);
++		this.bipedLeftArm2.setRotationPoint(6.0F, -15.0F + var2, 0.0F);
++		this.bipedRightArm0 = new ModelRenderer(this, 32, 38).setTextureSize(var3, var4);
++		this.bipedRightArm0.addBox(-3.0F, -2.0F, -2.0F, 4, 12, 4, var1);
++		this.bipedRightArm0.setRotationPoint(-6.0F, -2.0F + var2, 0.0F);
++		this.bipedRightArm1 = new ModelRenderer(this, 48, 34).setTextureSize(var3, var4);
++		this.bipedRightArm1.addBox(-3.0F, -2.0F, -2.0F, 4, 12, 4, var1);
++		this.bipedRightArm1.setRotationPoint(-6.0F, -9.0F + var2, 0.0F);
++		this.bipedRightArm2 = new ModelRenderer(this, 48, 50).setTextureSize(var3, var4);
++		this.bipedRightArm2.addBox(-3.0F, -2.0F, -2.0F, 4, 12, 4, var1);
++		this.bipedRightArm2.setRotationPoint(-6.0F, -15.0F + var2, 0.0F);
++		this.bipedLeftLeg = new ModelRenderer(this, 24, 18).setTextureSize(var3, var4);
++		this.bipedLeftLeg.mirror = true;
++		this.bipedLeftLeg.addBox(-2.0F, -2.0F, -2.0F, 4, 16, 4, var1);
++		this.bipedLeftLeg.setRotationPoint(2.0F, 10.0F + var2, 0.0F);
++		this.bipedRightLeg = new ModelRenderer(this, 0, 29).setTextureSize(var3, var4);
++		this.bipedRightLeg.addBox(-2.0F, -2.0F, -2.0F, 4, 16, 4, var1);
++		this.bipedRightLeg.setRotationPoint(-2.0F, 10.0F + var2, 0.0F);
++	}
++
++	public void render(float var1, float var2, float var3, float var4, float var5, float var6) {
++		this.setRotationAngles(var1, var2, var3, var4, var5, var6);
++		this.rotateGT();
++		this.bipedHead.render(var6);
++		this.bipedBody.render(var6);
++		this.bipedRightArm0.render(var6);
++		this.bipedRightArm1.render(var6);
++		this.bipedRightArm2.render(var6);
++		this.bipedLeftArm0.render(var6);
++		this.bipedLeftArm1.render(var6);
++		this.bipedLeftArm2.render(var6);
++		this.bipedRightLeg.render(var6);
++		this.bipedLeftLeg.render(var6);
++	}
++
++	public void setRotationAngles(float var1, float var2, float var3, float var4, float var5, float var6) {
++		this.bipedHead.rotateAngleY = var4 / (180.0F / (float)Math.PI);
++		this.bipedHead.rotateAngleX = var5 / (180.0F / (float)Math.PI);
++		this.bipedRightArm0.rotateAngleX = MathHelper.cos(var1 * 0.6662F + (float)Math.PI) * 2.0F * var2 * 0.5F;
++		this.bipedRightArm1.rotateAngleX = MathHelper.cos(var1 * 0.6662F + (float)Math.PI) * 2.0F * var2 * 0.5F;
++		this.bipedRightArm2.rotateAngleX = MathHelper.cos(var1 * 0.6662F + (float)Math.PI) * 2.0F * var2 * 0.5F;
++		this.bipedLeftArm0.rotateAngleX = MathHelper.cos(var1 * 0.6662F) * 2.0F * var2 * 0.5F;
++		this.bipedLeftArm1.rotateAngleX = MathHelper.cos(var1 * 0.6662F) * 2.0F * var2 * 0.5F;
++		this.bipedLeftArm2.rotateAngleX = MathHelper.cos(var1 * 0.6662F) * 2.0F * var2 * 0.5F;
++		this.bipedRightArm0.rotateAngleZ = 0.0F;
++		this.bipedRightArm1.rotateAngleZ = 0.0F;
++		this.bipedRightArm2.rotateAngleZ = 0.0F;
++		this.bipedLeftArm0.rotateAngleZ = 0.0F;
++		this.bipedLeftArm1.rotateAngleZ = 0.0F;
++		this.bipedLeftArm2.rotateAngleZ = 0.0F;
++		this.bipedRightLeg.rotateAngleX = MathHelper.cos(var1 * 0.6662F) * 1.4F * var2;
++		this.bipedLeftLeg.rotateAngleX = MathHelper.cos(var1 * 0.6662F + (float)Math.PI) * 1.4F * var2;
++		this.bipedRightLeg.rotateAngleY = 0.0F;
++		this.bipedLeftLeg.rotateAngleY = 0.0F;
++		if(this.isRiding) {
++			this.bipedRightArm0.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedRightArm1.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedRightArm2.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedLeftArm0.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedLeftArm1.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedLeftArm2.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedRightLeg.rotateAngleX = (float)Math.PI * -0.4F;
++			this.bipedLeftLeg.rotateAngleX = (float)Math.PI * -0.4F;
++			this.bipedRightLeg.rotateAngleY = (float)Math.PI * 0.1F;
++			this.bipedLeftLeg.rotateAngleY = (float)Math.PI * -0.1F;
++		}
++
++		this.bipedRightArm0.rotateAngleY = 0.0F;
++		this.bipedRightArm1.rotateAngleY = 0.0F;
++		this.bipedRightArm2.rotateAngleY = 0.0F;
++		this.bipedLeftArm0.rotateAngleY = 0.0F;
++		this.bipedLeftArm1.rotateAngleY = 0.0F;
++		this.bipedLeftArm2.rotateAngleY = 0.0F;
++		if(this.onGround > -9990.0F) {
++			float var7 = this.onGround;
++			this.bipedBody.rotateAngleY = MathHelper.sin(MathHelper.sqrt_float(var7) * (float)Math.PI * 2.0F) * 0.2F;
++			this.bipedRightArm0.rotationPointZ = MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm0.rotationPointX = -MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm1.rotationPointZ = MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm1.rotationPointX = -MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm2.rotationPointZ = MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm2.rotationPointX = -MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm0.rotationPointZ = -MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm0.rotationPointX = MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm1.rotationPointZ = -MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm1.rotationPointX = MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm2.rotationPointZ = -MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm2.rotationPointX = MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm0.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedRightArm1.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedRightArm2.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm0.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm0.rotateAngleX += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm1.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm1.rotateAngleX += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm2.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm2.rotateAngleX += this.bipedBody.rotateAngleY;
++			var7 = 1.0F - this.onGround;
++			var7 *= var7;
++			var7 *= var7;
++			var7 = 1.0F - var7;
++			float var8 = MathHelper.sin(var7 * (float)Math.PI);
++			float var9 = MathHelper.sin(this.onGround * (float)Math.PI) * -(this.bipedHead.rotateAngleX - 0.7F) * (12.0F / 16.0F);
++			this.bipedRightArm0.rotateAngleX = (float)((double)this.bipedRightArm0.rotateAngleX - ((double)var8 * 1.2D + (double)var9));
++			this.bipedRightArm0.rotateAngleY += this.bipedBody.rotateAngleY * 2.0F;
++			this.bipedRightArm0.rotateAngleZ = MathHelper.sin(this.onGround * (float)Math.PI) * -0.4F;
++			this.bipedRightArm1.rotateAngleX = (float)((double)this.bipedRightArm0.rotateAngleX - ((double)var8 * 1.2D + (double)var9));
++			this.bipedRightArm1.rotateAngleY += this.bipedBody.rotateAngleY * 2.0F;
++			this.bipedRightArm1.rotateAngleZ = MathHelper.sin(this.onGround * (float)Math.PI) * -0.4F;
++			this.bipedRightArm2.rotateAngleX = (float)((double)this.bipedRightArm0.rotateAngleX - ((double)var8 * 1.2D + (double)var9));
++			this.bipedRightArm2.rotateAngleY += this.bipedBody.rotateAngleY * 2.0F;
++			this.bipedRightArm2.rotateAngleZ = MathHelper.sin(this.onGround * (float)Math.PI) * -0.4F;
++		}
++
++		this.bipedBody.rotateAngleX = 0.0F;
++		this.bipedRightLeg.rotationPointZ = 0.0F;
++		this.bipedLeftLeg.rotationPointZ = 0.0F;
++		this.bipedRightArm0.rotateAngleZ += MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedRightArm1.rotateAngleZ += MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedRightArm2.rotateAngleZ += MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedLeftArm0.rotateAngleZ -= MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedLeftArm1.rotateAngleZ -= MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedLeftArm1.rotateAngleZ -= MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedRightArm0.rotateAngleX += MathHelper.sin(var3 * 0.067F) * 0.05F;
++		this.bipedRightArm1.rotateAngleX += MathHelper.sin(var3 * 0.067F) * 0.05F;
++		this.bipedRightArm2.rotateAngleX += MathHelper.sin(var3 * 0.067F) * 0.05F;
++		this.bipedLeftArm0.rotateAngleX -= MathHelper.sin(var3 * 0.067F) * 0.05F;
++		this.bipedLeftArm1.rotateAngleX -= MathHelper.sin(var3 * 0.067F) * 0.05F;
++		this.bipedLeftArm2.rotateAngleX -= MathHelper.sin(var3 * 0.067F) * 0.05F;
++	}
++
++	public void rotateGT() {
++		float rotateRA = 1.5708F;
++		float rotateLA = -1.5708F;
++		this.bipedRightArm1.rotateAngleZ = 0.0F + rotateRA;
++		this.bipedLeftArm1.rotateAngleZ = 0.0F + rotateLA;
++		this.bipedRightArm1.rotateAngleZ += MathHelper.cos(rotateRA * 0.09F) * 0.05F + 0.05F;
++		this.bipedLeftArm1.rotateAngleZ -= MathHelper.cos(rotateLA * 0.09F) * 0.05F + 0.05F;
++		this.bipedRightArm1.rotateAngleX += MathHelper.sin(rotateRA * 0.067F) * 0.05F;
++		this.bipedLeftArm1.rotateAngleX -= MathHelper.sin(rotateLA * 0.067F) * 0.05F;
++		this.bipedRightArm2.rotateAngleZ = 0.0F + rotateRA;
++		this.bipedLeftArm2.rotateAngleZ = 0.0F + rotateLA;
++		this.bipedRightArm2.rotateAngleZ += MathHelper.cos(rotateRA * 0.09F) * 0.05F + 0.05F;
++		this.bipedLeftArm2.rotateAngleZ -= MathHelper.cos(rotateLA * 0.09F) * 0.05F + 0.05F;
++		this.bipedRightArm2.rotateAngleX += MathHelper.sin(rotateRA * 0.067F) * 0.05F;
++		this.bipedLeftArm2.rotateAngleX -= MathHelper.sin(rotateLA * 0.067F) * 0.05F;
++	}
++}
 --- net/minecraft/src/EntityPlayerSP.java
 +++ net/minecraft/src/EntityPlayerSP.java
 @@ -1,6 +1,7 @@
@@ -277,18 +662,17 @@
  
  public class EntityPlayerSP extends EntityPlayer {
  	public MovementInput movementInput;
-@@ -46,6 +47,21 @@
+@@ -46,6 +47,20 @@
  	}
  
  	public void onLivingUpdate() {
-+		Random rand = new Random();
-+		if(rand.nextInt(20 * 60) == 0) {
-+			int XX = (int)this.posX + rand.nextInt(40) - 20;
-+			int YY = (int)this.posY + rand.nextInt(40) - 20;
-+			int ZZ = (int)this.posZ + rand.nextInt(40) - 20;
-+			int XX2 = (int)this.posX + rand.nextInt(40) - 20;
-+			int YY2 = (int)this.posY + rand.nextInt(40) - 20;
-+			int ZZ2 = (int)this.posZ + rand.nextInt(40) - 20;
++		if(this.rand.nextInt(20 * 60) == 0) {
++			int XX = (int)this.posX + this.rand.nextInt(40) - 20;
++			int YY = (int)this.posY + this.rand.nextInt(40) - 20;
++			int ZZ = (int)this.posZ + this.rand.nextInt(40) - 20;
++			int XX2 = (int)this.posX + this.rand.nextInt(40) - 20;
++			int YY2 = (int)this.posY + this.rand.nextInt(40) - 20;
++			int ZZ2 = (int)this.posZ + this.rand.nextInt(40) - 20;
 +			int blockId1 = this.worldObj.getBlockId(XX, YY, ZZ);
 +			int blockId2 = this.worldObj.getBlockId(XX2, YY2, ZZ2);
 +			if(NGBlockID.id(blockId1) && NGBlockID.id(blockId2)) {
@@ -299,6 +683,340 @@
  		if(this.sprintingTicksLeft > 0) {
  			--this.sprintingTicksLeft;
  			if(this.sprintingTicksLeft == 0) {
+--- /dev/null
++++ net/minecraft/src/RenderThatVirus.java
+@@ -1,0 +1,19 @@
++package net.minecraft.src;
++
++import org.lwjgl.opengl.GL11;
++
++public class RenderThatVirus extends RenderLiving {
++	protected ModelThatVirus modelBipedMain;
++	protected float field_40296_d;
++
++	public RenderThatVirus(ModelThatVirus var1, float var2) {
++		this(var1, var2, 1.0F);
++		this.modelBipedMain = var1;
++	}
++
++	public RenderThatVirus(ModelThatVirus var1, float var2, float var3) {
++		super(var1, var2);
++		this.modelBipedMain = var1;
++		this.field_40296_d = var3;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/EntityErrorMob.java
+@@ -1,0 +1,37 @@
++package net.minecraft.src;
++
++public class EntityErrorMob extends EntityVirusMob {
++	public EntityErrorMob(World var1) {
++		super(var1);
++		this.texture = "/addmob/ErrorMob/errormob0.png";
++		this.moveSpeed = 0.23F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 30;
++	}
++
++	public void onUpdate() {
++		super.onUpdate();
++		this.texture = "/addmob/ErrorMob/errormob" + this.rand.nextInt(9) + ".png";
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++
++
++}
+--- net/minecraft/src/NetClientHandler.java
++++ net/minecraft/src/NetClientHandler.java
+@@ -791,4 +791,31 @@
+ 		var2.capabilities.disableDamage = var1.field_50072_a;
+ 		var2.capabilities.allowFlying = var1.field_50071_c;
+ 	}
++
++	public void handleEvent(Packet80Event var1) {
++		switch(var1.event) {
++		case 0:
++			break;
++		case 1:
++			break;
++		case 2:
++			break;
++		case 3:
++			break;
++		case 4:
++			break;
++		case 5:
++			break;
++		case 6:
++			break;
++		case 7:
++			break;
++		case 8:
++			break;
++		}
++	}
++
++	public void handleSound(Packet81Sound var1) {
++		new Thread(()->WavPlaySound.playsound(var1.path)).start();
++	}
+ }
+--- /dev/null
++++ net/minecraft/src/Entity5W1H.java
+@@ -1,0 +1,30 @@
++package net.minecraft.src;
++
++public class Entity5W1H extends EntityVirusMob {
++	public Entity5W1H(World var1) {
++		super(var1);
++		this.texture = "/addmob/5w1h.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/EntityThatVirus.java
+@@ -1,0 +1,30 @@
++package net.minecraft.src;
++
++public class EntityThatVirus extends EntityVirusMob {
++	public EntityThatVirus(World var1) {
++		super(var1);
++		this.texture = "/addmob/VirusMan.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
+--- net/minecraft/src/NetHandler.java
++++ net/minecraft/src/NetHandler.java
+@@ -253,4 +253,10 @@
+ 	public void func_50100_a(Packet202PlayerAbilities var1) {
+ 		this.registerPacket(var1);
+ 	}
++
++	public void handleEvent(Packet80Event var1) {
++	}
++
++	public void handleSound(Packet81Sound var1) {
++	}
+ }
+--- /dev/null
++++ net/minecraft/src/EntityUnstable.java
+@@ -1,0 +1,30 @@
++package net.minecraft.src;
++
++public class EntityUnstable extends EntityVirusMob {
++	public EntityUnstable(World var1) {
++		super(var1);
++		this.texture = "/addmob/unstable.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/ModelIrregularity.java
+@@ -1,0 +1,103 @@
++package net.minecraft.src;
++
++public class ModelIrregularity extends ModelBase {
++	private ModelRenderer head;
++	private ModelRenderer body;
++	private ModelRenderer left_arm;
++	private ModelRenderer right_arm;
++	private ModelRenderer right_arm_r1;
++	private ModelRenderer left_leg;
++	private ModelRenderer right_leg;
++	private ModelRenderer right_leg_r1;
++	private ModelRenderer right_arm2;
++	private ModelRenderer right_leg2;
++	private ModelRenderer left_arm2;
++	private ModelRenderer left_arm3;
++	private ModelRenderer right_arm3;
++
++	public ModelIrregularity() {
++		textureWidth = 64;
++		textureHeight = 64;
++
++		head = new ModelRenderer(this);
++		head.setRotationPoint(0.0F, -33.0F, 0.0F);
++		this.head.setTextureOffset(0, 0).addBox(-4.0F, -23.0F, -4.0F, 8, 24, 8, 0.0F);
++
++		body = new ModelRenderer(this);
++		body.setRotationPoint(0.0F, -14.0F, 0.0F);
++		this.body.setTextureOffset(36, 0).addBox(-4.0F, -18.0F, -2.0F, 8, 36, 4, 0.0F);
++
++		left_arm = new ModelRenderer(this);
++		left_arm.setRotationPoint(6.0F, -6.0F, 0.0F);
++		this.left_arm.setTextureOffset(16, 32).addBox(-2.0F, -2.0F, -2.0F, 4, 12, 4, 0.0F);
++
++		right_arm = new ModelRenderer(this);
++		right_arm.setRotationPoint(-6.0F, -18.0F, 0.0F);
++
++
++		right_arm_r1 = new ModelRenderer(this);
++		right_arm_r1.setRotationPoint(0.0F, 0.0F, 0.0F);
++		right_arm.addChild(right_arm_r1);
++		setRotation(right_arm_r1, 0.0F, 0.0F, 1.5708F);
++		this.right_arm_r1.setTextureOffset(16, 32).addBox(-2.0F, -2.0F, -2.0F, 4, 12, 4, 0.0F);
++
++		left_leg = new ModelRenderer(this);
++		left_leg.setRotationPoint(0.0F, 4.0F, 0.0F);
++		this.left_leg.setTextureOffset(40, 40).addBox(-4.0F, 0.0F, -2.0F, 8, 20, 4, 0.0F);
++
++		right_leg = new ModelRenderer(this);
++		right_leg.setRotationPoint(6.0F, -32.0F, 0.0F);
++
++
++		right_leg_r1 = new ModelRenderer(this);
++		right_leg_r1.setRotationPoint(-2.0F, 2.0F, 0.0F);
++		right_leg.addChild(right_leg_r1);
++		setRotation(right_leg_r1, 0.0F, 0.0F, -1.5708F);
++		this.right_leg_r1.setTextureOffset(0, 32).addBox(-2.0F, 0.0F, -2.0F, 4, 12, 4, 0.0F);
++
++		right_arm2 = new ModelRenderer(this);
++		right_arm2.setRotationPoint(6.0F, -18.0F, 0.0F);
++		setRotation(right_arm2, 0.0F, 0.0F, -1.5708F);
++		this.right_arm2.setTextureOffset(16, 32).addBox(-2.0F, -2.0F, -2.0F, 4, 12, 4, 0.0F);
++
++		right_leg2 = new ModelRenderer(this);
++		right_leg2.setRotationPoint(-6.0F, -32.0F, 0.0F);
++		this.right_leg2.setTextureOffset(0, 32).addBox(-2.0F, 0.0F, -2.0F, 4, 12, 4, 0.0F);
++
++		left_arm2 = new ModelRenderer(this);
++		left_arm2.setRotationPoint(-6.0F, -6.0F, 0.0F);
++		setRotation(left_arm2, 0.0F, 0.0F, 1.5708F);
++		this.left_arm2.setTextureOffset(16, 32).addBox(-2.0F, -2.0F, -2.0F, 4, 12, 4, 0.0F);
++
++		left_arm3 = new ModelRenderer(this);
++		left_arm3.setRotationPoint(-18.0F, -6.0F, 0.0F);
++		this.left_arm3.setTextureOffset(16, 32).addBox(-2.0F, -2.0F, -2.0F, 4, 12, 4, 0.0F);
++
++		right_arm3 = new ModelRenderer(this);
++		right_arm3.setRotationPoint(10.0F, 2.0F, 0.0F);
++		setRotation(right_arm3, 0.0F, 0.0F, -1.5708F);
++		this.right_arm3.setTextureOffset(16, 32).addBox(-2.0F, -2.0F, -2.0F, 4, 12, 4, 0.0F);
++	}
++
++	@Override
++	public void render(Entity entity, float f, float f1, float f2, float f3, float f4, float f5) {
++		this.setRotationAngles(f, f1, f2, f3, f4, f5);
++		head.render(f5);
++		body.render(f5);
++		left_arm.render(f5);
++		right_arm.render(f5);
++		left_leg.render(f5);
++		right_leg.render(f5);
++		right_arm2.render(f5);
++		right_leg2.render(f5);
++		left_arm2.render(f5);
++		left_arm3.render(f5);
++		right_arm3.render(f5);
++	}
++
++	public void setRotation(ModelRenderer modelRenderer, float x, float y, float z) {
++		modelRenderer.rotateAngleX = x;
++		modelRenderer.rotateAngleY = y;
++		modelRenderer.rotateAngleZ = z;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/RenderLongVirusMan.java
+@@ -1,0 +1,17 @@
++package net.minecraft.src;
++
++public class RenderLongVirusMan extends RenderLiving {
++	protected ModelLongVirusMan modelBipedMain;
++	protected float field_40296_d;
++
++	public RenderLongVirusMan(ModelLongVirusMan var1, float var2) {
++		this(var1, var2, 1.0F);
++		this.modelBipedMain = var1;
++	}
++
++	public RenderLongVirusMan(ModelLongVirusMan var1, float var2, float var3) {
++		super(var1, var2);
++		this.modelBipedMain = var1;
++		this.field_40296_d = var3;
++	}
++}
 --- /dev/null
 +++ net/minecraft/src/NGBlockID.java
 @@ -1,0 +1,90 @@
@@ -393,6 +1111,92 @@
 +	}
 +}
 --- /dev/null
++++ net/minecraft/src/EntityWorldArchiveMan.java
+@@ -1,0 +1,50 @@
++package net.minecraft.src;
++
++public class EntityWorldArchiveMan extends EntityVirusMob {
++	public EntityWorldArchiveMan(World var1) {
++		super(var1);
++		this.texture = "/addmob/WorldArchiveMan.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 44;
++	}
++
++	public void onUpdate() {
++		super.onUpdate();
++		if(this.worldObj.isRemote && this.rand.nextInt(20 * 60) == 0) {
++			int XX = (int)this.posX + this.rand.nextInt(40) - 20;
++			int YY = (int)this.posY + this.rand.nextInt(40) - 20;
++			int ZZ = (int)this.posZ + this.rand.nextInt(40) - 20;
++			int XX2 = (int)this.posX + this.rand.nextInt(40) - 20;
++			int YY2 = (int)this.posY + this.rand.nextInt(40) - 20;
++			int ZZ2 = (int)this.posZ + this.rand.nextInt(40) - 20;
++			int blockId1 = this.worldObj.getBlockId(XX, YY, ZZ);
++			int blockId2 = this.worldObj.getBlockId(XX2, YY2, ZZ2);
++			if(NGBlockID.id(blockId1) && NGBlockID.id(blockId2)) {
++				this.worldObj.setBlockWithNotify(XX, YY, ZZ, 0);
++				this.worldObj.setBlockWithNotify(XX2, YY2, ZZ2, blockId1);
++			}
++		}
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++
++
++}
+--- /dev/null
++++ net/minecraft/src/EntityGlitchVirusMan.java
+@@ -1,0 +1,30 @@
++package net.minecraft.src;
++
++public class EntityGlitchVirusMan extends EntityVirusMob {
++	public EntityGlitchVirusMan(World var1) {
++		super(var1);
++		this.texture = "/addmob/GlitchVirusMan.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
+--- /dev/null
 +++ net/minecraft/src/UnarchivedGUI.java
 @@ -1,0 +1,20 @@
 +package net.minecraft.src;
@@ -415,6 +1219,57 @@
 +		frame.setVisible(true);
 +	}
 +}
+--- /dev/null
++++ net/minecraft/src/WavPlaySound.java
+@@ -1,0 +1,37 @@
++package net.minecraft.src;
++
++import java.io.BufferedInputStream;
++import java.io.IOException;
++import java.io.InputStream;
++import javax.sound.sampled.*;
++
++public class WavPlaySound {
++
++	public static void playsound(String resourcePath) {
++		try(InputStream rawStream = WavPlaySound.class.getResourceAsStream(resourcePath)) {
++			if(rawStream == null) {
++				System.err.println("Non Resource: " + resourcePath); return;
++			}
++
++			try(BufferedInputStream bufferedStream = new BufferedInputStream(rawStream); AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(bufferedStream)) {
++
++				Clip clip = AudioSystem.getClip(); clip.open(audioInputStream); clip.start();
++
++				clip.addLineListener(event->{
++					if(event.getType() == LineEvent.Type.STOP) {
++						clip.close();
++					}
++				});
++
++				while(clip.isRunning()) {
++					Thread.sleep(100);
++				}
++			}
++
++		} catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
++			e.printStackTrace();
++		} catch (InterruptedException e) {
++			Thread.currentThread().interrupt();
++		}
++	}
++}
+--- net/minecraft/src/EntityCreature.java
++++ net/minecraft/src/EntityCreature.java
+@@ -1,7 +1,7 @@
+ package net.minecraft.src;
+ 
+ public abstract class EntityCreature extends EntityLiving {
+-	private PathEntity pathToEntity;
++	public PathEntity pathToEntity;
+ 	protected Entity entityToAttack;
+ 	protected boolean hasAttacked = false;
+ 	protected int fleeingTick = 0;
 --- net/minecraft/src/GuiIngame.java
 +++ net/minecraft/src/GuiIngame.java
 @@ -281,7 +281,7 @@
@@ -435,6 +1290,265 @@
  		}
  
  		if(this.recordPlayingUpFor > 0) {
+--- /dev/null
++++ net/minecraft/src/ModelLongVirusMan.java
+@@ -1,0 +1,111 @@
++package net.minecraft.src;
++
++public class ModelLongVirusMan extends ModelBase {
++	public ModelRenderer bipedHead;
++	public ModelRenderer bipedHeadWear;
++	public ModelRenderer bipedBody;
++	public ModelRenderer bipedRightArm;
++	public ModelRenderer bipedLeftArm;
++	public ModelRenderer bipedRightLeg;
++	public ModelRenderer bipedLeftLeg;
++
++	public ModelLongVirusMan() {
++		this(0.0F);
++	}
++
++	public ModelLongVirusMan(float var1) {
++		this(var1, 0.0F);
++	}
++
++	public ModelLongVirusMan(float var1, float var2) {
++		byte var3 = 64;
++		byte var4 = 64;
++		this.bipedHead = new ModelRenderer(this, 0, 0).setTextureSize(var3, var4);
++		this.bipedHead.addBox(-4.0F, -8.0F, -4.0F, 8, 8, 8, var1);
++		this.bipedHead.setRotationPoint(0.0F, -32.0F + var2, 0.0F);
++		this.bipedHeadWear = new ModelRenderer(this, 32, 0).setTextureSize(var3, var4);
++		this.bipedHeadWear.addBox(-4.0F, -8.0F, -4.0F, 8, 8, 8, var1 + 0.5F);
++		this.bipedHeadWear.setRotationPoint(0.0F, -32.0F + var2, 0.0F);
++		this.bipedBody = new ModelRenderer(this, 16, 16).setTextureSize(var3, var4);
++		this.bipedBody.addBox(-4.0F, -6.0F, -2.0F, 8, 12, 4, var1);
++		this.bipedBody.setRotationPoint(0.0F, -26.0F + var2, 0.0F);
++		this.bipedRightArm = new ModelRenderer(this, 40, 16).setTextureSize(var3, var4);
++		this.bipedRightArm.addBox(-3.0F, -2.0F, -2.0F, 4, 20, 4, var1);
++		this.bipedRightArm.setRotationPoint(-6.0F, -30.0F + var2, 0.0F);
++		this.bipedLeftArm = new ModelRenderer(this, 40, 16).setTextureSize(var3, var4);
++		this.bipedLeftArm.addBox(-1.0F, -2.0F, -2.0F, 4, 20, 4, var1);
++		this.bipedLeftArm.setRotationPoint(6.0F, -30.0F + var2, 0.0F);
++		this.bipedLeftArm.mirror = true;
++		this.bipedRightLeg = new ModelRenderer(this, 0, 16).setTextureSize(var3, var4);
++		this.bipedRightLeg.addBox(-2.0F, 0.0F, -2.0F, 4, 44, 4, var1);
++		this.bipedRightLeg.setRotationPoint(-2.0F, -20.0F + var2, 0.0F);
++		this.bipedLeftLeg = new ModelRenderer(this, 0, 16).setTextureSize(var3, var4);
++		this.bipedLeftLeg.addBox(-2.0F, 0.0F, -2.0F, 4, 44, 4, var1);
++		this.bipedLeftLeg.setRotationPoint(2.0F, -20.0F + var2, 0.0F);
++		this.bipedLeftLeg.mirror = true;
++	}
++
++	public void render(float var1, float var2, float var3, float var4, float var5, float var6) {
++		this.setRotationAngles(var1, var2, var3, var4, var5, var6);
++		this.bipedHead.render(var6);
++		this.bipedHeadWear.render(var6);
++		this.bipedBody.render(var6);
++		this.bipedRightArm.render(var6);
++		this.bipedLeftArm.render(var6);
++		this.bipedRightLeg.render(var6);
++		this.bipedLeftLeg.render(var6);
++	}
++
++
++	public void setRotationAngles(float var1, float var2, float var3, float var4, float var5, float var6) {
++		this.bipedHead.rotateAngleY = var4 / (180.0F / (float)Math.PI);
++		this.bipedHead.rotateAngleX = var5 / (180.0F / (float)Math.PI);
++		this.bipedRightArm.rotateAngleX = MathHelper.cos(var1 * 0.6662F + (float)Math.PI) * 2.0F * var2 * 0.5F;
++		this.bipedLeftArm.rotateAngleX = MathHelper.cos(var1 * 0.6662F) * 2.0F * var2 * 0.5F;
++		this.bipedRightArm.rotateAngleZ = 0.0F;
++		this.bipedLeftArm.rotateAngleZ = 0.0F;
++		this.bipedRightLeg.rotateAngleX = MathHelper.cos(var1 * 0.6662F) * 1.4F * var2;
++		this.bipedLeftLeg.rotateAngleX = MathHelper.cos(var1 * 0.6662F + (float)Math.PI) * 1.4F * var2;
++		this.bipedRightLeg.rotateAngleY = 0.0F;
++		this.bipedLeftLeg.rotateAngleY = 0.0F;
++		if(this.isRiding) {
++			this.bipedRightArm.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedLeftArm.rotateAngleX += (float)Math.PI * -0.2F;
++			this.bipedRightLeg.rotateAngleX = (float)Math.PI * -0.4F;
++			this.bipedLeftLeg.rotateAngleX = (float)Math.PI * -0.4F;
++			this.bipedRightLeg.rotateAngleY = (float)Math.PI * 0.1F;
++			this.bipedLeftLeg.rotateAngleY = (float)Math.PI * -0.1F;
++		}
++
++		this.bipedRightArm.rotateAngleY = 0.0F;
++		this.bipedLeftArm.rotateAngleY = 0.0F;
++		float var7;
++		float var8;
++		if(this.onGround > -9990.0F) {
++			var7 = this.onGround;
++			this.bipedBody.rotateAngleY = MathHelper.sin(MathHelper.sqrt_float(var7) * (float)Math.PI * 2.0F) * 0.2F;
++			this.bipedRightArm.rotationPointZ = MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm.rotationPointX = -MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm.rotationPointZ = -MathHelper.sin(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedLeftArm.rotationPointX = MathHelper.cos(this.bipedBody.rotateAngleY) * 5.0F;
++			this.bipedRightArm.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm.rotateAngleY += this.bipedBody.rotateAngleY;
++			this.bipedLeftArm.rotateAngleX += this.bipedBody.rotateAngleY;
++			var7 = 1.0F - this.onGround;
++			var7 *= var7;
++			var7 *= var7;
++			var7 = 1.0F - var7;
++			var8 = MathHelper.sin(var7 * (float)Math.PI);
++			float var9 = MathHelper.sin(this.onGround * (float)Math.PI) * -(this.bipedHead.rotateAngleX - 0.7F) * (12.0F / 16.0F);
++			this.bipedRightArm.rotateAngleX = (float)((double)this.bipedRightArm.rotateAngleX - ((double)var8 * 1.2D + (double)var9));
++			this.bipedRightArm.rotateAngleY += this.bipedBody.rotateAngleY * 2.0F;
++			this.bipedRightArm.rotateAngleZ = MathHelper.sin(this.onGround * (float)Math.PI) * -0.4F;
++		}
++
++		this.bipedRightArm.rotateAngleZ += MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedLeftArm.rotateAngleZ -= MathHelper.cos(var3 * 0.09F) * 0.05F + 0.05F;
++		this.bipedRightArm.rotateAngleX += MathHelper.sin(var3 * 0.067F) * 0.05F;
++		this.bipedLeftArm.rotateAngleX -= MathHelper.sin(var3 * 0.067F) * 0.05F;
++
++	}
++}
+--- /dev/null
++++ net/minecraft/src/RenderIrregularity.java
+@@ -1,0 +1,17 @@
++package net.minecraft.src;
++
++public class RenderIrregularity extends RenderLiving {
++	protected ModelIrregularity modelBipedMain;
++	protected float field_40296_d;
++
++	public RenderIrregularity(ModelIrregularity var1, float var2) {
++		this(var1, var2, 1.0F);
++		this.modelBipedMain = var1;
++	}
++
++	public RenderIrregularity(ModelIrregularity var1, float var2, float var3) {
++		super(var1, var2);
++		this.modelBipedMain = var1;
++		this.field_40296_d = var3;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/EntityVirusMob.java
+@@ -1,0 +1,87 @@
++package net.minecraft.src;
++
++public abstract class EntityVirusMob extends EntityCreature implements IMob {
++	protected int attackStrength = 2;
++
++	public EntityVirusMob(World var1) {
++		super(var1);
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	public void onUpdate() {
++		super.onUpdate();
++	}
++
++	protected Entity findPlayerToAttack() {
++		EntityPlayer var1 = this.worldObj.getClosestVulnerablePlayerToEntity(this, 64.0D);
++		return var1 != null && this.canEntityBeSeen(var1) ? var1 : null;
++	}
++
++	public boolean attackEntityFrom(DamageSource var1, int var2) {
++		if(super.attackEntityFrom(var1, var2)) {
++			Entity var3 = var1.getEntity();
++			if(this.riddenByEntity != var3 && this.ridingEntity != var3) {
++				if(var3 != this) {
++					this.entityToAttack = var3;
++				}
++
++				return true;
++			} else {
++				return true;
++			}
++		} else {
++			return false;
++		}
++	}
++
++	public boolean attackEntityAsMob(Entity var1) {
++		int var2 = this.attackStrength;
++		if(this.isPotionActive(Potion.damageBoost)) {
++			var2 += 3 << this.getActivePotionEffect(Potion.damageBoost).getAmplifier();
++		}
++
++		if(this.isPotionActive(Potion.weakness)) {
++			var2 -= 2 << this.getActivePotionEffect(Potion.weakness).getAmplifier();
++		}
++
++		return var1.attackEntityFrom(DamageSource.causeMobDamage(this), var2);
++	}
++
++	protected void attackEntity(Entity var1, float var2) {
++		if(this.attackTime <= 0 && var2 < 2.0F && var1.boundingBox.maxY > this.boundingBox.minY && var1.boundingBox.minY < this.boundingBox.maxY) {
++			this.attackTime = 20;
++			this.attackEntityAsMob(var1);
++		}
++
++	}
++
++	public void writeEntityToNBT(NBTTagCompound var1) {
++		super.writeEntityToNBT(var1);
++	}
++
++	public void readEntityFromNBT(NBTTagCompound var1) {
++		super.readEntityFromNBT(var1);
++	}
++
++	protected boolean isValidLightLevel() {
++		int var1 = MathHelper.floor_double(this.posX);
++		int var2 = MathHelper.floor_double(this.boundingBox.minY);
++		int var3 = MathHelper.floor_double(this.posZ);
++		if(this.worldObj.getSavedLightValue(EnumSkyBlock.Sky, var1, var2, var3) > this.rand.nextInt(32)) {
++			return false;
++		} else {
++			int var4 = this.worldObj.getBlockLightValue(var1, var2, var3);
++			if(this.worldObj.isThundering()) {
++				int var5 = this.worldObj.skylightSubtracted;
++				this.worldObj.skylightSubtracted = 10;
++				var4 = this.worldObj.getBlockLightValue(var1, var2, var3);
++				this.worldObj.skylightSubtracted = var5;
++			}
++
++			return var4 <= this.rand.nextInt(8);
++		}
++	}
++}
+--- /dev/null
++++ net/minecraft/src/Packet81Sound.java
+@@ -1,0 +1,32 @@
++package net.minecraft.src;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet81Sound extends Packet {
++	public String path;
++
++	public Packet81Sound() {
++	}
++
++	public Packet81Sound(String var1) {
++		this.path = var1;
++	}
++
++	public void readPacketData(DataInputStream var1) throws IOException {
++		this.path = var1.readUTF();
++	}
++
++	public void writePacketData(DataOutputStream var1) throws IOException {
++		var1.writeUTF(this.path);
++	}
++
++	public void processPacket(NetHandler var1) {
++		var1.handleSound(this);
++	}
++
++	public int getPacketSize() {
++		return this.path.length();
++	}
++}
 --- net/minecraft/src/PanelCrashReport.java
 +++ net/minecraft/src/PanelCrashReport.java
 @@ -25,7 +25,7 @@
@@ -475,3 +1589,327 @@
  	}
  
  	public static void func_52004_D() {
+--- /dev/null
++++ net/minecraft/src/Packet80Event.java
+@@ -1,0 +1,32 @@
++package net.minecraft.src;
++
++import java.io.DataInputStream;
++import java.io.DataOutputStream;
++import java.io.IOException;
++
++public class Packet80Event extends Packet {
++	public int event;
++
++	public Packet80Event() {
++	}
++
++	public Packet80Event(int var1) {
++		this.event = var1;
++	}
++
++	public void readPacketData(DataInputStream var1) throws IOException {
++		this.event = var1.readInt();
++	}
++
++	public void writePacketData(DataOutputStream var1) throws IOException {
++		var1.writeInt(this.event);
++	}
++
++	public void processPacket(NetHandler var1) {
++		var1.handleEvent(this);
++	}
++
++	public int getPacketSize() {
++		return this.event;
++	}
++}
+--- net/minecraft/src/Packet.java
++++ net/minecraft/src/Packet.java
+@@ -232,6 +232,8 @@
+ 		addIdClassMapping(61, true, false, Packet61DoorChange.class);
+ 		addIdClassMapping(70, true, false, Packet70Bed.class);
+ 		addIdClassMapping(71, true, false, Packet71Weather.class);
++		addIdClassMapping(80, true, true, Packet80Event.class);
++		addIdClassMapping(81, true, true, Packet81Sound.class);
+ 		addIdClassMapping(100, true, false, Packet100OpenWindow.class);
+ 		addIdClassMapping(101, true, true, Packet101CloseWindow.class);
+ 		addIdClassMapping(102, false, true, Packet102WindowClick.class);
+--- /dev/null
++++ net/minecraft/src/EntityComputerDestroyer.java
+@@ -1,0 +1,30 @@
++package net.minecraft.src;
++
++public class EntityComputerDestroyer extends EntityVirusMob {
++	public EntityComputerDestroyer(World var1) {
++		super(var1);
++		this.texture = "/addmob/ComputerDestroyer.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/EntityLongVirusMan.java
+@@ -1,0 +1,34 @@
++package net.minecraft.src;
++
++public class EntityLongVirusMan extends EntityVirusMobLong {
++	public EntityLongVirusMan(World var1) {
++		super(var1);
++		this.texture = "/addmob/LongVirusManjb.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	public boolean attackEntityFrom(DamageSource var1, int var2) {
++		return false;
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
+--- /dev/null
++++ net/minecraft/src/WorldRandomEvent.java
+@@ -1,0 +1,172 @@
++package net.minecraft.src;
++
++import java.util.List;
++import java.util.Random;
++
++public class WorldRandomEvent {
++	public World worldObj;
++	public boolean[] timerS;
++	public int[] timer;
++
++	public WorldRandomEvent(World world) {
++		this.worldObj = world;
++		this.timerS = new boolean[20];
++		this.timer = new int[20];
++	}
++
++	public void event0(EntityPlayerSP playerSP) {
++	}
++
++	public void event1(EntityPlayerSP playerSP) {
++	}
++
++	public void event2(EntityPlayerSP playerSP) {
++	}
++
++	public void event3(EntityPlayerSP playerSP) {
++	}
++
++	public void event4(EntityPlayerSP playerSP) {
++	}
++
++	public void event5(EntityPlayerSP playerSP) {
++	}
++
++	public void event6(EntityPlayerSP playerSP) {
++	}
++
++	public void event7(EntityPlayerSP playerSP) {
++	}
++
++	public void event8(EntityPlayerSP playerSP) {
++	}
++
++	public void event9(EntityPlayerSP playerSP) {
++	}
++
++	public void event10(EntityPlayerSP playerSP) {
++	}
++
++	public void event11(EntityPlayerSP playerSP) {
++	}
++
++	public void event12(EntityPlayerSP playerSP) {
++	}
++
++	public void event13(EntityPlayerSP playerSP) {
++	}
++
++	public void event14(EntityPlayerSP playerSP) {
++	}
++
++	public void event15(EntityPlayerSP playerSP) {
++	}
++
++	public void tickEvents() {
++		if(!this.worldObj.isRemote) {
++			List<EntityPlayerSP> playerSPList = this.worldObj.playerEntities;
++			if(!playerSPList.isEmpty()) {
++				EntityPlayerSP playerSP = playerSPList.get(new Random().nextInt(playerSPList.size()));
++				switch(new Random().nextInt(20 * 60 * 30)) {
++				case 0:
++					this.event0(playerSP);
++					break;
++				case 1:
++					this.event1(playerSP);
++					break;
++				case 2:
++					this.event2(playerSP);
++					break;
++				case 3:
++					this.event3(playerSP);
++					break;
++				case 4:
++					this.event4(playerSP);
++					break;
++				case 5:
++					this.event5(playerSP);
++					break;
++				case 6:
++					this.event6(playerSP);
++					break;
++				case 7:
++					this.event7(playerSP);
++					break;
++				case 8:
++					this.event8(playerSP);
++					break;
++				case 9:
++					this.event9(playerSP);
++					break;
++				case 10:
++					this.event10(playerSP);
++					break;
++				case 11:
++					this.event11(playerSP);
++					break;
++				case 12:
++					this.event12(playerSP);
++					break;
++				case 13:
++					this.event13(playerSP);
++					break;
++				case 14:
++					this.event14(playerSP);
++					break;
++				case 15:
++					this.event15(playerSP);
++					break;
++				}
++				if(this.timerS[0]) {
++					this.timer[0]++;
++					if(this.timer[0] >= 20 * 60 * 6) {
++						this.timerS[0] = false;
++						this.timer[0] = 0;
++					}
++				}
++				if(this.timerS[1]) {
++					this.timer[1]++;
++					if(this.timer[1] >= 20 * 8) {
++						this.timerS[1] = false;
++						this.timer[1] = 0;
++					}
++				}
++				if(this.timerS[2]) {
++					this.timer[2]++;
++					if(this.timer[2] >= 20 * 8) {
++						this.timerS[2] = false;
++						this.timer[2] = 0;
++					}
++				}
++				if(this.timerS[3]) {
++					this.timer[3]++;
++					if(this.timer[3] >= 20 * 8) {
++						this.timerS[3] = false;
++						this.timer[3] = 0;
++					}
++				}
++				if(this.timerS[4]) {
++					this.timer[4]++;
++					if(this.timer[4] >= 20 * 8) {
++						this.timerS[4] = false;
++						this.timer[4] = 0;
++					}
++				}
++				if(this.timerS[5]) {
++					this.timer[5]++;
++					if(this.timer[5] >= 20 * 8) {
++						this.timerS[5] = false;
++						this.timer[5] = 0;
++					}
++				}
++				if(this.timerS[6]) {
++					this.timer[6]++;
++					if(this.timer[6] >= 20 * 8) {
++						this.timerS[6] = false;
++						this.timer[6] = 0;
++					}
++				}
++			}
++		}
++	}
++}
+--- /dev/null
++++ net/minecraft/src/EntityVirusMan.java
+@@ -1,0 +1,30 @@
++package net.minecraft.src;
++
++public class EntityVirusMan extends EntityVirusMob {
++	public EntityVirusMan(World var1) {
++		super(var1);
++		this.texture = "/addmob/VirusMan.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 3;
++	}
++
++	public int getMaxHealth() {
++		return 40;
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
