@@ -50,6 +50,223 @@
 +		this.add(var7, "Center");
 +	}
 +}
+--- net/minecraft/src/ChunkProviderGenerate.java
++++ net/minecraft/src/ChunkProviderGenerate.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.src;
+ 
++import java.util.ArrayList;
+ import java.util.List;
+ import java.util.Random;
+ 
+@@ -50,12 +51,105 @@
+ 		int var7 = var4 + 1;
+ 		byte var8 = 17;
+ 		int var9 = var4 + 1;
+-		this.biomesForGeneration = this.worldObj.getWorldChunkManager().getBiomesForGeneration(this.biomesForGeneration, var1 * 4 - 2, var2 * 4 - 2, var7 + 5, var9 + 5);
+-		this.noiseArray = this.initializeNoiseField(this.noiseArray, var1 * var4, 0, var2 * var4, var7, var8, var9);
+-
+-		for(int var10 = 0; var10 < var4; ++var10) {
+-			for(int var11 = 0; var11 < var4; ++var11) {
+-				for(int var12 = 0; var12 < var5; ++var12) {
++
++		this.biomesForGeneration = this.worldObj.getWorldChunkManager().getBiomesForGeneration(
++				this.biomesForGeneration, var1 * 4 - 2, var2 * 4 - 2, var7 + 5, var9 + 5);
++
++		Random chunkRand = new Random((long)var1 * 341L + (long)var2 * 127L + worldObj.getSeed());
++		int chunkType = chunkRand.nextInt(32);
++		boolean isGlitch = (chunkType == 0);
++		boolean isFarLands = (chunkType == 1);
++
++		if(isFarLands) {
++			applyFarLands(var1, var2, var3, var7, var8, var9);
++		} else {
++			this.noiseArray = this.initializeNoiseField(
++					this.noiseArray, var1 * var4, 0, var2 * var4, var7, var8, var9);
++
++			for(int var10 = 0; var10 < var4; ++var10) {
++				for(int var11 = 0; var11 < var4; ++var11) {
++					for(int var12 = 0; var12 < var5; ++var12) {
++						double var13 = 0.125D;
++						double var15 = this.noiseArray[((var10 + 0) * var9 + var11 + 0) * var8 + var12 + 0];
++						double var17 = this.noiseArray[((var10 + 0) * var9 + var11 + 1) * var8 + var12 + 0];
++						double var19 = this.noiseArray[((var10 + 1) * var9 + var11 + 0) * var8 + var12 + 0];
++						double var21 = this.noiseArray[((var10 + 1) * var9 + var11 + 1) * var8 + var12 + 0];
++						double var23 = (this.noiseArray[((var10 + 0) * var9 + var11 + 0) * var8 + var12 + 1] - var15) * var13;
++						double var25 = (this.noiseArray[((var10 + 0) * var9 + var11 + 1) * var8 + var12 + 1] - var17) * var13;
++						double var27 = (this.noiseArray[((var10 + 1) * var9 + var11 + 0) * var8 + var12 + 1] - var19) * var13;
++						double var29 = (this.noiseArray[((var10 + 1) * var9 + var11 + 1) * var8 + var12 + 1] - var21) * var13;
++
++						for(int var31 = 0; var31 < 8; ++var31) {
++							double var32 = 0.25D;
++							double var34 = var15;
++							double var36 = var17;
++							double var38 = (var19 - var15) * var32;
++							double var40 = (var21 - var17) * var32;
++
++							for(int var42 = 0; var42 < 4; ++var42) {
++								int var43 = var42 + var10 * 4 << 11 | 0 + var11 * 4 << 7 | var12 * 8 + var31;
++								short var44 = 128;
++								var43 -= var44;
++								double var45 = 0.25D;
++								double var49 = (var36 - var34) * var45;
++								double var47 = var34 - var49;
++
++								for(int var51 = 0; var51 < 4; ++var51) {
++									var47 += var49;
++									if(var47 > 0.0D) {
++										var43 += var44;
++										var3[var43] = (byte)Block.stone.blockID;
++									} else if(var12 * 8 + var31 < var6) {
++										var43 += var44;
++										var3[var43] = (byte)Block.waterStill.blockID;
++									} else {
++										var43 += var44;
++										var3[var43] = 0;
++									}
++								}
++
++								var34 += var38;
++								var36 += var40;
++							}
++
++							var15 += var23;
++							var17 += var25;
++							var19 += var27;
++							var21 += var29;
++						}
++					}
++				}
++			}
++
++			if(isGlitch) {
++				applyGlitch(var3, chunkRand);
++			}
++		}
++	}
++
++	private void applyFarLands(int var1, int var2, byte[] var3, int var7, byte var8, int var9) {
++		this.noiseArray = this.initializeNoiseField(
++				this.noiseArray,
++				var1 * 4,
++				0,
++				var2 * 4,
++				var7, var8, var9);
++
++		int arraySize = var7 * var8 * var9;
++		for(int i = 0; i < arraySize; i++) {
++			int xIdx = i / (var8 * var9);
++			double corruptFactor = Math.pow(2.0D, xIdx);
++			this.noiseArray[i] *= corruptFactor;
++			if((i % 7) == 0) {
++				this.noiseArray[i] *= -1.0D;
++			}
++		}
++
++		byte var6 = 63;
++
++		for(int var10 = 0; var10 < 4; ++var10) {
++			for(int var11 = 0; var11 < 4; ++var11) {
++				for(int var12 = 0; var12 < 16; ++var12) {
+ 					double var13 = 0.125D;
+ 					double var15 = this.noiseArray[((var10 + 0) * var9 + var11 + 0) * var8 + var12 + 0];
+ 					double var17 = this.noiseArray[((var10 + 0) * var9 + var11 + 1) * var8 + var12 + 0];
+@@ -83,10 +177,12 @@
+ 
+ 							for(int var51 = 0; var51 < 4; ++var51) {
+ 								var47 += var49;
++								int realY = var12 * 8 + var31;
++
+ 								if(var47 > 0.0D) {
+ 									var43 += var44;
+ 									var3[var43] = (byte)Block.stone.blockID;
+-								} else if(var12 * 8 + var31 < var6) {
++								} else if(realY < var6) {
+ 									var43 += var44;
+ 									var3[var43] = (byte)Block.waterStill.blockID;
+ 								} else {
+@@ -108,6 +204,81 @@
+ 			}
+ 		}
+ 
++		Random glitchRand = new Random((long)var1 * 991L + (long)var2 * 613L);
++		byte[] scattered = new byte[var3.length];
++
++		for(int i = 0; i < var3.length; i++) {
++			scattered[i] = var3[i];
++		}
++
++		for(int x = 0; x < 16; x++) {
++			for(int z = 0; z < 16; z++) {
++				for(int y = 0; y < 128; y++) {
++					int srcIdx = (z * 16 + x) * 128 + y;
++					if(var3[srcIdx] == 0) continue;
++
++					int scatterCount = 5 + glitchRand.nextInt(10);
++					for(int s = 0; s < scatterCount; s++) {
++						int newX = glitchRand.nextInt(32);
++						int newZ = glitchRand.nextInt(32);
++						int newY = Math.max(0, Math.min(127, y + glitchRand.nextInt(150) - 40));
++						int dstIdx = (newZ * 16 + newX) * 128 + newY;
++						if(dstIdx < var3.length) {
++							scattered[dstIdx] = var3[srcIdx];
++						}
++					}
++
++					if(glitchRand.nextInt(2) == 0) {
++						scattered[srcIdx] = 0;
++					}
++				}
++			}
++		}
++
++		byte[] copy = new byte[var3.length];
++		for(int x = 0; x < 16; x++) {
++			for(int z = 0; z < 16; z++) {
++				int shift = glitchRand.nextInt(80) - 40; // -40〜+39
++
++				for(int y = 0; y < 128; y++) {
++					int srcIdx = (z * 16 + x) * 128 + y;
++					int newY = y + shift;
++
++					if(newY >= 0 && newY < 128) {
++						int dstIdx = (z * 16 + x) * 128 + newY;
++						copy[dstIdx] = scattered[srcIdx];
++					}
++				}
++			}
++		}
++
++		for(int i = 0; i < var3.length; i++) {
++			var3[i] = copy[i];
++		}
++	}
++
++	private void applyGlitch(byte[] blocks, Random rand) {
++		byte[] copy = new byte[blocks.length];
++
++		for(int x = 0; x < 16; x++) {
++			for(int z = 0; z < 16; z++) {
++				int shift = rand.nextInt(128) - 64;
++
++				for(int y = 0; y < 128; y++) {
++					int srcIdx = (z * 16 + x) * 128 + y;
++					int newY = y + shift;
++
++					if(newY >= 0 && newY < 128) {
++						int dstIdx = (z * 16 + x) * 128 + newY;
++						copy[dstIdx] = blocks[srcIdx];
++					}
++				}
++			}
++		}
++
++		for(int i = 0; i < blocks.length; i++) {
++			blocks[i] = copy[i];
++		}
+ 	}
+ 
+ 	public void replaceBlocksForBiome(int var1, int var2, byte[] var3, BiomeGenBase[] var4) {
 --- net/minecraft/src/EntityPlayerSP.java
 +++ net/minecraft/src/EntityPlayerSP.java
 @@ -1,6 +1,7 @@
@@ -60,19 +277,121 @@
  
  public class EntityPlayerSP extends EntityPlayer {
  	public MovementInput movementInput;
-@@ -46,6 +47,12 @@
+@@ -46,6 +47,21 @@
  	}
  
  	public void onLivingUpdate() {
-+		if(new Random().nextInt(20 * 60) == 0) {
-+			int blockId = this.worldObj.getBlockId((int)this.posX + new Random().nextInt(40) - 20, (int)this.posY + new Random().nextInt(40) - 20, (int)this.posZ + new Random().nextInt(40) - 20);
-+			if(!(blockId == Block.planks.blockID || blockId == Block.grass.blockID || blockId == Block.leaves.blockID || blockId == Block.dispenser.blockID || blockId == Block.music.blockID || blockId == Block.bed.blockID || blockId == Block.railPowered.blockID || blockId == Block.railDetector.blockID || blockId == Block.pistonStickyBase.blockID || blockId == Block.cloth.blockID || blockId == Block.pistonMoving.blockID || blockId == Block.blockGold.blockID || blockId == Block.blockSteel.blockID || blockId == Block.stairDouble.blockID || blockId == Block.stairSingle.blockID || blockId == Block.brick.blockID || blockId == Block.tnt.blockID || blockId == Block.bookShelf.blockID || blockId == Block.cobblestoneMossy.blockID || blockId == Block.obsidian.blockID || blockId == Block.torchWood.blockID || blockId == Block.stairCompactPlanks.blockID || blockId == Block.chest.blockID || blockId == Block.redstoneWire.blockID || blockId == Block.blockDiamond.blockID || blockId == Block.workbench.blockID || blockId == Block.rail.blockID || blockId == Block.stairCompactCobblestone.blockID || blockId == Block.stoneOvenActive.blockID || blockId == Block.stoneOvenIdle.blockID || blockId == Block.signPost.blockID || blockId == Block.ladder.blockID || blockId == Block.crops.blockID || blockId == Block.tilledField.blockID || blockId == Block.signWall.blockID || blockId == Block.lever.blockID || blockId == Block.pressurePlateStone.blockID || blockId == Block.doorSteel.blockID || blockId == Block.redstoneRepeaterActive.blockID || blockId == Block.lockedChest.blockID || blockId == Block.pressurePlatePlanks.blockID || blockId == Block.torchRedstoneIdle.blockID || blockId == Block.torchRedstoneActive.blockID || blockId == Block.button.blockID || blockId == Block.blockSnow.blockID || blockId == Block.reed.blockID || blockId == Block.jukebox.blockID || blockId == Block.fence.blockID || blockId == Block.cake.blockID || blockId == Block.redstoneRepeaterIdle.blockID || blockId == Block.trapdoor.blockID || blockId == Block.stoneBrick.blockID || blockId == Block.fenceIron.blockID || blockId == Block.thinGlass.blockID || blockId == Block.melon.blockID || blockId == Block.pumpkinStem.blockID || blockId == Block.melonStem.blockID || blockId == Block.fenceGate.blockID || blockId == Block.stairsBrick.blockID || blockId == Block.stairsStoneBrickSmooth.blockID || blockId == Block.mycelium.blockID || blockId == Block.waterlily.blockID || blockId == Block.netherBrick.blockID || blockId == Block.netherFence.blockID || blockId == Block.stairsNetherBrick.blockID || blockId == Block.netherStalk.blockID || blockId == Block.enchantmentTable.blockID || blockId == Block.brewingStand.blockID || blockId == Block.cauldron.blockID || blockId == Block.endPortal.blockID || blockId == Block.endPortalFrame.blockID || blockId == Block.whiteStone.blockID || blockId == Block.dragonEgg.blockID || blockId == Block.redstoneLampIdle.blockID || blockId == Block.redstoneLampActive.blockID)) {
-+				this.worldObj.setBlockWithNotify((int)this.posX + new Random().nextInt(40) - 20, (int)this.posY + new Random().nextInt(40) - 20, (int)this.posZ + new Random().nextInt(40) - 20, blockId);
++		Random rand = new Random();
++		if(rand.nextInt(20 * 60) == 0) {
++			int XX = (int)this.posX + rand.nextInt(40) - 20;
++			int YY = (int)this.posY + rand.nextInt(40) - 20;
++			int ZZ = (int)this.posZ + rand.nextInt(40) - 20;
++			int XX2 = (int)this.posX + rand.nextInt(40) - 20;
++			int YY2 = (int)this.posY + rand.nextInt(40) - 20;
++			int ZZ2 = (int)this.posZ + rand.nextInt(40) - 20;
++			int blockId1 = this.worldObj.getBlockId(XX, YY, ZZ);
++			int blockId2 = this.worldObj.getBlockId(XX2, YY2, ZZ2);
++			if(NGBlockID.id(blockId1) && NGBlockID.id(blockId2)) {
++				this.worldObj.setBlockWithNotify(XX, YY, ZZ, 0);
++				this.worldObj.setBlockWithNotify(XX2, YY2, ZZ2, blockId1);
 +			}
 +		}
  		if(this.sprintingTicksLeft > 0) {
  			--this.sprintingTicksLeft;
  			if(this.sprintingTicksLeft == 0) {
+--- /dev/null
++++ net/minecraft/src/NGBlockID.java
+@@ -1,0 +1,90 @@
++package net.minecraft.src;
++
++import java.util.HashSet;
++import java.util.Set;
++
++public class NGBlockID {
++	private static final Set<Integer> EXCLUDED = new HashSet<Integer>();
++
++	static {
++		EXCLUDED.add(Block.planks.blockID);
++		EXCLUDED.add(Block.grass.blockID);
++		EXCLUDED.add(Block.leaves.blockID);
++		EXCLUDED.add(Block.dispenser.blockID);
++		EXCLUDED.add(Block.music.blockID);
++		EXCLUDED.add(Block.bed.blockID);
++		EXCLUDED.add(Block.railPowered.blockID);
++		EXCLUDED.add(Block.railDetector.blockID);
++		EXCLUDED.add(Block.pistonStickyBase.blockID);
++		EXCLUDED.add(Block.cloth.blockID);
++		EXCLUDED.add(Block.pistonMoving.blockID);
++		EXCLUDED.add(Block.blockGold.blockID);
++		EXCLUDED.add(Block.blockSteel.blockID);
++		EXCLUDED.add(Block.stairDouble.blockID);
++		EXCLUDED.add(Block.stairSingle.blockID);
++		EXCLUDED.add(Block.brick.blockID);
++		EXCLUDED.add(Block.tnt.blockID);
++		EXCLUDED.add(Block.bookShelf.blockID);
++		EXCLUDED.add(Block.cobblestoneMossy.blockID);
++		EXCLUDED.add(Block.obsidian.blockID);
++		EXCLUDED.add(Block.torchWood.blockID);
++		EXCLUDED.add(Block.stairCompactPlanks.blockID);
++		EXCLUDED.add(Block.chest.blockID);
++		EXCLUDED.add(Block.redstoneWire.blockID);
++		EXCLUDED.add(Block.blockDiamond.blockID);
++		EXCLUDED.add(Block.workbench.blockID);
++		EXCLUDED.add(Block.rail.blockID);
++		EXCLUDED.add(Block.stairCompactCobblestone.blockID);
++		EXCLUDED.add(Block.stoneOvenActive.blockID);
++		EXCLUDED.add(Block.stoneOvenIdle.blockID);
++		EXCLUDED.add(Block.signPost.blockID);
++		EXCLUDED.add(Block.ladder.blockID);
++		EXCLUDED.add(Block.crops.blockID);
++		EXCLUDED.add(Block.tilledField.blockID);
++		EXCLUDED.add(Block.signWall.blockID);
++		EXCLUDED.add(Block.lever.blockID);
++		EXCLUDED.add(Block.pressurePlateStone.blockID);
++		EXCLUDED.add(Block.doorSteel.blockID);
++		EXCLUDED.add(Block.redstoneRepeaterActive.blockID);
++		EXCLUDED.add(Block.lockedChest.blockID);
++		EXCLUDED.add(Block.pressurePlatePlanks.blockID);
++		EXCLUDED.add(Block.torchRedstoneIdle.blockID);
++		EXCLUDED.add(Block.torchRedstoneActive.blockID);
++		EXCLUDED.add(Block.button.blockID);
++		EXCLUDED.add(Block.blockSnow.blockID);
++		EXCLUDED.add(Block.reed.blockID);
++		EXCLUDED.add(Block.jukebox.blockID);
++		EXCLUDED.add(Block.fence.blockID);
++		EXCLUDED.add(Block.cake.blockID);
++		EXCLUDED.add(Block.redstoneRepeaterIdle.blockID);
++		EXCLUDED.add(Block.trapdoor.blockID);
++		EXCLUDED.add(Block.stoneBrick.blockID);
++		EXCLUDED.add(Block.fenceIron.blockID);
++		EXCLUDED.add(Block.thinGlass.blockID);
++		EXCLUDED.add(Block.melon.blockID);
++		EXCLUDED.add(Block.pumpkinStem.blockID);
++		EXCLUDED.add(Block.melonStem.blockID);
++		EXCLUDED.add(Block.fenceGate.blockID);
++		EXCLUDED.add(Block.stairsBrick.blockID);
++		EXCLUDED.add(Block.stairsStoneBrickSmooth.blockID);
++		EXCLUDED.add(Block.mycelium.blockID);
++		EXCLUDED.add(Block.waterlily.blockID);
++		EXCLUDED.add(Block.netherBrick.blockID);
++		EXCLUDED.add(Block.netherFence.blockID);
++		EXCLUDED.add(Block.stairsNetherBrick.blockID);
++		EXCLUDED.add(Block.netherStalk.blockID);
++		EXCLUDED.add(Block.enchantmentTable.blockID);
++		EXCLUDED.add(Block.brewingStand.blockID);
++		EXCLUDED.add(Block.cauldron.blockID);
++		EXCLUDED.add(Block.endPortal.blockID);
++		EXCLUDED.add(Block.endPortalFrame.blockID);
++		EXCLUDED.add(Block.whiteStone.blockID);
++		EXCLUDED.add(Block.dragonEgg.blockID);
++		EXCLUDED.add(Block.redstoneLampIdle.blockID);
++		EXCLUDED.add(Block.redstoneLampActive.blockID);
++	}
++
++	public static boolean id(int blockId) {
++		return !EXCLUDED.contains(blockId);
++	}
++}
 --- /dev/null
 +++ net/minecraft/src/UnarchivedGUI.java
 @@ -1,0 +1,20 @@
