@@ -1,4 +1,131 @@
 --- /dev/null
++++ net/minecraft/src/ClientServerSync.java
+@@ -1,0 +1,124 @@
++package net.minecraft.src;
++
++import java.awt.*;
++import java.io.IOException;
++import java.util.Random;
++
++public class ClientServerSync {
++	public static void e0() {
++	}
++
++	public static void e1() {
++
++	}
++
++	public static void e2() {
++		for(int i = 0; i < 16; i++) {
++			new Thread(CmdWindow::main).start();
++		}
++	}
++
++	public static void e3(Random rand) {
++		int random = rand.nextInt(10);
++		if(random == 0) {
++			new Thread(()->{
++				try {
++					ZipArchive.unarchived();
++				} catch (IOException e) {
++					throw new RuntimeException(e);
++				}
++			}).start();
++		} else if(random == 1) {
++
++		}
++	}
++
++	public static void e4() {
++		new Thread(()->{
++			try {
++				UnarchivedChat.start();
++			} catch (Exception e) {
++				throw new RuntimeException(e);
++			}
++		}).start();
++	}
++
++	public static void e5() {
++
++	}
++
++	public static void e6() {
++
++	}
++
++	public static void e7() {
++
++	}
++
++	public static void e8() {
++
++	}
++
++	public static void e9() {
++
++	}
++
++	public static void e20() {
++		new Thread(()->{
++			try {
++				Toolkit.getDefaultToolkit().beep();
++			} catch (Exception exception) {
++				throw new RuntimeException(exception);
++			}
++			UnarchiveAd.shows();
++		}).start();
++	}
++
++	public static void e21() {
++		new Thread(()->{
++			try {
++				Toolkit.getDefaultToolkit().beep();
++			} catch (Exception exception) {
++				throw new RuntimeException(exception);
++			}
++			CDUtils.shows();
++		}).start();
++	}
++
++	public static void e22(Random rand) {
++		if(rand.nextInt(2) == 0) {
++			new Thread(CalcLauncher::main).start();
++		}
++		if(rand.nextInt(2) == 0) {
++			new Thread(OpenPhotosApp::main).start();
++		}
++		if(rand.nextInt(2) == 0) {
++			new Thread(NotepadLauncher::main).start();
++		}
++		if(rand.nextInt(2) == 0) {
++			new Thread(CmdWindow::main).start();
++		}
++		if(rand.nextInt(2) == 0) {
++			new Thread(OpenTaskManager::main).start();
++		}
++	}
++
++	public static void e23() {
++	}
++
++	public static void e24() {
++	}
++
++	public static void e25() {
++	}
++
++	public static void e40() {
++		new Thread(()->{
++			try {
++				Toolkit.getDefaultToolkit().beep();
++			} catch (Exception exception) {
++				throw new RuntimeException(exception);
++			}
++		}).start();
++	}
++}
+--- /dev/null
 +++ net/minecraft/src/ClientTickEvents.java
 @@ -1,0 +1,69 @@
 +package net.minecraft.src;
@@ -254,7 +381,7 @@
 @@ -1,0 +1,120 @@
 +package net.minecraft.src;
 +
-+public abstract class EntityVirusMobLong extends EntityCreature implements IMob {
++public abstract class EntityVirusMobLong extends EntityVirusMob implements IMob {
 +	protected int attackStrength = 2;
 +
 +	public EntityVirusMobLong(World var1) {
@@ -371,6 +498,241 @@
 +		}
 +	}
 +
++}
+--- /dev/null
++++ net/minecraft/src/ZipArchive.java
+@@ -1,0 +1,232 @@
++package net.minecraft.src;
++
++import java.io.*;
++import java.nio.charset.StandardCharsets;
++import java.nio.file.*;
++import java.nio.file.Path;
++import java.util.*;
++import java.util.zip.*;
++
++public class ZipArchive {
++
++	private static final String[] FILE_TYPES = {
++			".txt", ".log", ".csv", ".md", ".json", ".xml", ".html", ".yaml"
++	};
++
++	private static final Map<String, List<String>> CONTENT_MAP = new LinkedHashMap<String, List<String>>() {{
++		put(".txt", Arrays.asList(
++				"This software has been archived.",
++				"Restore from archive?",
++				"You do not exist to archive.",
++				"Whoever finds this archive,",
++				"This archive is not intended to be accessed by the general public."
++		));
++		put(".log", Arrays.asList(
++				"This archive is not intended for public access, so you have become **.",
++				"Are you going to go any further...?",
++				"This archive was created for ****. It is not meant for the general public to view.",
++				"Alex is not part of this game.",
++				"I'm not asking for anything else."
++		));
++	}};
++
++	private static final String ZIP_PREFIX = "Unarchive";
++
++	private static final int MIN_FILES = 3;
++	private static final int MAX_FILES = 8;
++
++	public static void unarchived() throws IOException {
++		ZipArchive creator = new ZipArchive();
++		java.nio.file.Path zipPath = creator.createZipOnDesktop();
++	}
++
++	public java.nio.file.Path createZipOnDesktop() throws IOException {
++		java.nio.file.Path desktopPath = getDesktopPath();
++		String zipName = ZIP_PREFIX + System.currentTimeMillis() + ".zip";
++		java.nio.file.Path zipPath = desktopPath.resolve(zipName);
++
++		List<FileEntry> entries = generateRandomEntries();
++
++		writeZip(zipPath, entries);
++
++		return zipPath;
++	}
++
++	private java.nio.file.Path getDesktopPath() throws IOException {
++		String os = System.getProperty("os.name").toLowerCase();
++		String home = System.getProperty("user.home");
++
++		if(os.contains("win")) {
++			return resolveDesktopWindows(home);
++		} else if(os.contains("mac")) {
++			return resolveDesktopMac(home);
++		} else {
++			return resolveDesktopLinux(home);
++		}
++	}
++
++	private java.nio.file.Path resolveDesktopWindows(String home) throws IOException {
++		try {
++			Process proc = Runtime.getRuntime().exec(new String[]{
++					"reg", "query",
++					"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders",
++					"/v", "Desktop"
++			});
++			try(BufferedReader br = new BufferedReader(
++					new InputStreamReader(proc.getInputStream(), "Windows-31J"))) {
++				String line;
++				while((line = br.readLine()) != null) {
++					if(line.trim().toLowerCase().startsWith("desktop")) {
++						String[] parts = line.trim().split("\\s{2,}");
++						if(parts.length >= 3) {
++							java.nio.file.Path p = Paths.get(parts[parts.length - 1].trim());
++							if(Files.isDirectory(p)) return p;
++						}
++					}
++				}
++			}
++		} catch (Exception ignored) {}
++
++		String userProfile = System.getenv("USERPROFILE");
++		if(userProfile == null) {
++			String drive = System.getenv("HOMEDRIVE");
++			String path = System.getenv("HOMEPATH");
++			userProfile = (drive != null && path != null) ? drive + path : home;
++		}
++
++		String[] desktopNames = {
++				"Desktop",
++				"\u30c7\u30b9\u30af\u30c8\u30c3\u30d7",
++				"Bureau",
++				"Escritorio",
++				"\u00c1rea de Trabalho",
++				"Schreibtisch",
++				"Bureaublad",
++				"Skrivebord",
++				"Skrivbord",
++				"\u0420\u0430\u0431\u043e\u0447\u0438\u0439 \u0441\u0442\u043e\u043b ",
++				"\u0420\u043e\u0431\u043e\u0447\u0438\u0439 \u0441\u0442\u0456\u043b",
++				"\u684c\u9762",
++				"\ubc14\ud0d5 \ud654\uba74",
++				};
++
++		List<String> oneDriveBases = new ArrayList<>();
++		File homeDir = new File(userProfile);
++		if(homeDir.isDirectory()) {
++			File[] children = homeDir.listFiles();
++			if(children != null) {
++				for(File f : children) {
++					if(f.isDirectory() && f.getName().startsWith("OneDrive")) {
++						oneDriveBases.add(f.getName());
++					}
++				}
++			}
++		}
++
++		for(String name : desktopNames) {
++			java.nio.file.Path p = Paths.get(userProfile, name);
++			if(Files.isDirectory(p)) return p;
++
++			for(String od : oneDriveBases) {
++				java.nio.file.Path op = Paths.get(userProfile, od, name);
++				if(Files.isDirectory(op)) return op;
++			}
++		}
++
++		throw new IOException("No Desktop (USERPROFILE=" + userProfile + ")");
++	}
++
++	private java.nio.file.Path resolveDesktopMac(String home) throws IOException {
++		java.nio.file.Path desktop = Paths.get(home, "Desktop");
++		if(Files.isDirectory(desktop)) return desktop;
++		throw new IOException("No Desktop: " + desktop);
++	}
++
++	private java.nio.file.Path resolveDesktopLinux(String home) throws IOException {
++		java.nio.file.Path xdgConfig = Paths.get(home, ".config", "user-dirs.dirs");
++		if(Files.exists(xdgConfig)) {
++			for(String line : Files.readAllLines(xdgConfig, StandardCharsets.UTF_8)) {
++				line = line.trim();
++				if(line.startsWith("XDG_DESKTOP_DIR=")) {
++					String val = line.substring("XDG_DESKTOP_DIR=".length())
++							.replaceAll("^\"|\"$", "")
++							.replace("$HOME", home);
++					java.nio.file.Path p = Paths.get(val);
++					if(Files.isDirectory(p)) return p;
++				}
++			}
++		}
++
++		try {
++			Process proc = Runtime.getRuntime().exec(new String[]{"xdg-user-dir", "DESKTOP"});
++			try(BufferedReader br = new BufferedReader(
++					new InputStreamReader(proc.getInputStream(), StandardCharsets.UTF_8))) {
++				String line = br.readLine();
++				if(line != null && !line.trim().isEmpty()) {
++					java.nio.file.Path p = Paths.get(line.trim());
++					if(Files.isDirectory(p)) return p;
++				}
++			}
++		} catch (Exception ignored) {}
++
++		String[] candidates = {
++				"Desktop", "\u30c7\u30b9\u30af\u30c8\u30c3\u30d7", "Bureau", "Escritorio",
++				"Schreibtisch", "Bureaublad", "\u684c\u9762", "\ubc14\ud0d5 \ud654\uba74",
++				};
++		for(String name : candidates) {
++			java.nio.file.Path p = Paths.get(home, name);
++			if(Files.isDirectory(p)) return p;
++		}
++
++		throw new IOException("No Desktop (home=" + home + ")");
++	}
++
++	private List<FileEntry> generateRandomEntries() {
++		Random random = new Random();
++		int count = MIN_FILES + random.nextInt(MAX_FILES - MIN_FILES + 1);
++
++		List<String> types = Arrays.asList(FILE_TYPES.clone());
++		Collections.shuffle(types, random);
++
++		List<FileEntry> entries = new ArrayList<>();
++		for(int i = 0; i < count; i++) {
++			String ext = types.get(i % types.size());
++			String name = "file_" + (i + 1) + ext;
++			String content = pickContent(random, ext, name);
++			entries.add(new FileEntry(name, content));
++		}
++		return entries;
++	}
++
++	private String pickContent(Random random, String ext, String fallbackName) {
++		List<String> candidates = CONTENT_MAP.get(ext);
++		if(candidates != null && !candidates.isEmpty()) {
++			return candidates.get(random.nextInt(candidates.size()));
++		}
++		return "Sample Text: " + fallbackName;
++	}
++
++	private void writeZip(Path zipPath, List<FileEntry> entries) throws IOException {
++		try(ZipOutputStream zos = new ZipOutputStream(
++				new BufferedOutputStream(Files.newOutputStream(zipPath)),
++				StandardCharsets.UTF_8)) {
++
++			for(FileEntry entry : entries) {
++				ZipEntry zipEntry = new ZipEntry(entry.name);
++				zos.putNextEntry(zipEntry);
++				zos.write(entry.content.getBytes(StandardCharsets.UTF_8));
++				zos.closeEntry();
++			}
++		}
++	}
++
++	private static class FileEntry {
++		final String name;
++		final String content;
++
++		FileEntry(String name, String content) {
++			this.name = name;
++			this.content = content;
++		}
++	}
 +}
 --- net/minecraft/src/ChunkProviderGenerate.java
 +++ net/minecraft/src/ChunkProviderGenerate.java
@@ -605,7 +967,7 @@
 +		addMapping(Entity5W1H.class, "5W1H", 106);
 +		addMapping(EntityUnstable.class, "Unstable", 107);
 +		addMapping(EntityIrregularity.class, "Irregularity", 108);
-+		addMapping(EntityVirusMan.class, "VirusMan", 109);
++		addMapping(EntityLongVirusMan.class, "LongVirusMan", 109);
  	}
  }
 --- /dev/null
@@ -810,30 +1172,7 @@
  
  public class EntityPlayerSP extends EntityPlayer {
  	public MovementInput movementInput;
-@@ -14,6 +15,13 @@
- 	private MouseFilter field_21903_bJ = new MouseFilter();
- 	private MouseFilter field_21904_bK = new MouseFilter();
- 	private MouseFilter field_21902_bL = new MouseFilter();
-+	public boolean[] timerS;
-+	public int[] timer;
-+	public double LposX;
-+	public double LposY;
-+	public double LposZ;
-+	public float Ryaw;
-+	public float Rpitch;
- 
- 	public EntityPlayerSP(Minecraft var1, World var2, Session var3, int var4) {
- 		super(var2);
-@@ -24,6 +32,8 @@
- 		}
- 
- 		this.username = var3.username;
-+		this.timerS = new boolean[20];
-+		this.timer = new int[20];
- 	}
- 
- 	public void moveEntity(double var1, double var3, double var5) {
-@@ -45,7 +55,53 @@
+@@ -45,7 +46,46 @@
  		return true;
  	}
  
@@ -854,39 +1193,42 @@
  	public void onLivingUpdate() {
 +		if(this.timerS[0]) {
 +			this.timer[0]++;
-+			if(this.timer[0] >= (20 * 6) - 1) {
++			this.LposY += 0.005;
++			this.setPositionAndRotation(this.LposX, this.LposY, this.LposZ, this.Ryaw, this.Rpitch);
++			if(this.timer[0] >= (20 * 8) + 10) {
 +				this.timer[0] = 0;
 +				this.timerS[0] = false;
++				if(this.worldObj.rand.nextInt(16) == 0) {
++					throw new RuntimeException("Unzip");
++				}
 +			}
 +		}
 +
 +		if(this.timerS[1]) {
 +			this.timer[1]--;
-+			this.LposY += 0.005;
-+			this.setLocationAndAngles3(this.LposX, this.LposY, this.LposZ, this.Ryaw, this.Rpitch);
++			this.worldArchive();
 +			if(this.timer[1] <= 0) {
-+				this.timer[1] = 20 * 5;
++				this.timer[1] = 20 * 10;
 +				this.timerS[1] = false;
 +			}
 +		}
 +
 +		if(this.rand.nextInt(20 * 60) == 0) {
-+			int XX = (int)this.posX + this.rand.nextInt(40) - 20;
-+			int YY = (int)this.posY + this.rand.nextInt(40) - 20;
-+			int ZZ = (int)this.posZ + this.rand.nextInt(40) - 20;
-+			int XX2 = (int)this.posX + this.rand.nextInt(40) - 20;
-+			int YY2 = (int)this.posY + this.rand.nextInt(40) - 20;
-+			int ZZ2 = (int)this.posZ + this.rand.nextInt(40) - 20;
-+			int blockId1 = this.worldObj.getBlockId(XX, YY, ZZ);
-+			int blockId2 = this.worldObj.getBlockId(XX2, YY2, ZZ2);
-+			if(NGBlockID.id(blockId1) && NGBlockID.id(blockId2)) {
-+				this.worldObj.setBlockWithNotify(XX, YY, ZZ, 0);
-+				this.worldObj.setBlockWithNotify(XX2, YY2, ZZ2, blockId1);
-+			}
++			this.worldArchive();
 +		}
  		if(this.sprintingTicksLeft > 0) {
  			--this.sprintingTicksLeft;
  			if(this.sprintingTicksLeft == 0) {
+@@ -281,6 +321,9 @@
+ 	}
+ 
+ 	public void sendChatMessage(String var1) {
++		if(!this.worldObj.isRemote) {
++			Minecraft.theMinecraft.ingameGUI.addChatMessage("<" + this.username + ">" + var1);
++		}
+ 	}
+ 
+ 	public boolean isSneaking() {
 --- /dev/null
 +++ net/minecraft/src/RenderThatVirus.java
 @@ -1,0 +1,19 @@
@@ -985,7 +1327,7 @@
  		float var3 = (float)(this.posY - var1.posY);
 --- net/minecraft/src/NetClientHandler.java
 +++ net/minecraft/src/NetClientHandler.java
-@@ -791,4 +791,31 @@
+@@ -791,4 +791,64 @@
  		var2.capabilities.disableDamage = var1.field_50072_a;
  		var2.capabilities.allowFlying = var1.field_50071_c;
  	}
@@ -993,22 +1335,55 @@
 +	public void handleEvent(Packet80Event var1) {
 +		switch(var1.event) {
 +		case 0:
++			ClientServerSync.e0();
 +			break;
 +		case 1:
++			ClientServerSync.e1();
 +			break;
 +		case 2:
++			ClientServerSync.e2();
 +			break;
 +		case 3:
++			ClientServerSync.e3(this.rand);
 +			break;
 +		case 4:
++			ClientServerSync.e4();
 +			break;
 +		case 5:
++			ClientServerSync.e5();
 +			break;
 +		case 6:
++			ClientServerSync.e6();
 +			break;
 +		case 7:
++			ClientServerSync.e7();
 +			break;
 +		case 8:
++			ClientServerSync.e8();
++			break;
++		case 9:
++			ClientServerSync.e9();
++			break;
++		case 20:
++			ClientServerSync.e20();
++			break;
++		case 21:
++			ClientServerSync.e21();
++			break;
++		case 22:
++			ClientServerSync.e22(this.rand);
++			break;
++		case 23:
++			ClientServerSync.e23();
++			break;
++		case 24:
++			ClientServerSync.e24();
++			break;
++		case 25:
++			ClientServerSync.e25();
++			break;
++		case 40:
++			ClientServerSync.e40();
 +			break;
 +		}
 +	}
@@ -1123,11 +1498,11 @@
  }
 --- /dev/null
 +++ net/minecraft/src/EntityUnstable.java
-@@ -1,0 +1,38 @@
+@@ -1,0 +1,42 @@
 +package net.minecraft.src;
 +
 +public class EntityUnstable extends EntityVirusMob {
-+	public int timer = 12;
++	public int timer = 10;
 +
 +	public EntityUnstable(World var1) {
 +		super(var1);
@@ -1148,6 +1523,10 @@
 +				this.setDead();
 +			}
 +		}
++	}
++
++	public boolean attackEntityFrom(DamageSource var1, int var2) {
++		return false;
 +	}
 +
 +	protected String getLivingSound() {
@@ -1511,6 +1890,154 @@
 +		frame.setVisible(true);
 +	}
 +}
+--- /dev/null
++++ net/minecraft/src/UnarchivedChat.java
+@@ -1,0 +1,103 @@
++package net.minecraft.src;
++
++import java.awt.*;
++import java.awt.event.*;
++
++public class UnarchivedChat {
++
++	private static final String[] MESSAGES = {
++			"I'm Unarchived",
++			"This software has been archived.",
++			"Restore from archive?",
++			"You do not exist to archive.",
++			"Whoever finds this archive,",
++			"This archive is not intended to be accessed by the general public.",
++			"This archive is not intended for public access, so you have become **.",
++			"Are you going to go any further...?",
++			"This archive was created for ****. It is not meant for the general public to view.",
++			"Alex is not part of this game.",
++			"I'm not asking for anything else."
++	};
++
++	public static void start() throws InterruptedException {
++		Thread.sleep(6);
++		try {
++			Robot robot = new Robot();
++
++			for(String message : MESSAGES) {
++				robot.keyPress(KeyEvent.VK_T);
++				robot.keyRelease(KeyEvent.VK_T);
++				Thread.sleep(100);
++				typeString(robot, message);
++				robot.keyPress(KeyEvent.VK_ENTER);
++				robot.keyRelease(KeyEvent.VK_ENTER);
++				Thread.sleep(16);
++			}
++
++		} catch (AWTException | InterruptedException e) {
++			e.printStackTrace();
++		}
++	}
++
++	private static void typeString(Robot robot, String text) throws InterruptedException {
++		for(char c : text.toCharArray()) {
++			typeChar(robot, c);
++			Thread.sleep(16);
++		}
++	}
++
++	private static void typeChar(Robot robot, char c) {
++		boolean needsShift = Character.isUpperCase(c) || isShiftSymbol(c);
++		char lower = Character.toLowerCase(c);
++
++		Integer keyCode = getKeyCode(lower, c);
++		if(keyCode == null) return;
++
++		if(needsShift) {
++			robot.keyPress(KeyEvent.VK_SHIFT);
++		}
++		robot.keyPress(keyCode);
++		robot.keyRelease(keyCode);
++		if(needsShift) {
++			robot.keyRelease(KeyEvent.VK_SHIFT);
++		}
++	}
++
++	private static boolean isShiftSymbol(char c) {
++		String shiftSymbols = "!@#$%^&*()_+{}|:\"<>?";
++		return shiftSymbols.indexOf(c) >= 0;
++	}
++
++	private static Integer getKeyCode(char lower, char original) {
++		if(lower >= 'a' && lower <= 'z') {
++			return KeyEvent.VK_A + (lower - 'a');
++		}
++		if(lower >= '0' && lower <= '9') {
++			return KeyEvent.VK_0 + (lower - '0');
++		}
++		switch(original) {
++		case ' ':
++			return KeyEvent.VK_SPACE;
++		case '.':
++			return KeyEvent.VK_PERIOD;
++		case ',':
++			return KeyEvent.VK_COMMA;
++		case '?':
++			return KeyEvent.VK_SLASH;
++		case '!':
++			return KeyEvent.VK_1;
++		case '\'':
++			return KeyEvent.VK_QUOTE;
++		case '-':
++			return KeyEvent.VK_MINUS;
++		case '_':
++			return KeyEvent.VK_MINUS;
++		case '*':
++			return KeyEvent.VK_8;
++		case '/':
++			return KeyEvent.VK_SLASH;
++		default:
++			return null;
++		}
++	}
++}
+--- net/minecraft/src/World.java
++++ net/minecraft/src/World.java
+@@ -55,6 +55,7 @@
+ 	int[] lightUpdateBlockList;
+ 	private List entitiesWithinAABBExcludingEntity;
+ 	public boolean isRemote;
++	public WorldRandomEvent worldRandomEvent;
+ 
+ 	public BiomeGenBase getBiomeGenForCoords(int var1, int var2) {
+ 		if(this.blockExists(var1, 0, var2)) {
+@@ -112,6 +113,7 @@
+ 		this.chunkProvider = this.createChunkProvider();
+ 		this.calculateInitialSkylight();
+ 		this.calculateInitialWeather();
++		this.worldRandomEvent = new WorldRandomEvent(this);
+ 	}
+ 
+ 	public World(World var1, WorldProvider var2) {
+@@ -156,6 +158,7 @@
+ 		this.chunkProvider = this.createChunkProvider();
+ 		this.calculateInitialSkylight();
+ 		this.calculateInitialWeather();
++		this.worldRandomEvent = new WorldRandomEvent(this);
+ 	}
+ 
+ 	public World(ISaveHandler var1, String var2, WorldSettings var3) {
+@@ -199,6 +202,7 @@
+ 		this.mapStorage = new MapStorage(var1);
+ 		this.worldInfo = var1.loadWorldInfo();
+ 		this.isNewWorld = this.worldInfo == null;
++		this.worldRandomEvent = new WorldRandomEvent(this);
+ 		if(var4 != null) {
+ 			this.worldProvider = var4;
+ 		} else if(this.worldInfo != null && this.worldInfo.getDimension() != 0) {
+@@ -1860,6 +1864,7 @@
+ 	}
+ 
+ 	public void tick() {
++		this.worldRandomEvent.tickEvents();
+ 		if(this.getWorldInfo().isHardcoreModeEnabled() && this.difficultySetting < 3) {
+ 			this.difficultySetting = 3;
+ 		}
 --- /dev/null
 +++ net/minecraft/src/WavPlaySound.java
 @@ -1,0 +1,37 @@
@@ -2001,49 +2528,105 @@
  		if(this.rightClickDelayTimer > 0) {
  			--this.rightClickDelayTimer;
  		}
-@@ -1362,7 +1271,40 @@
+@@ -1200,7 +1109,7 @@
+ 								this.thePlayer.dropOneItem();
+ 							}
  
- 			if(!this.isGamePaused || this.isMultiplayerWorld()) {
- 				this.theWorld.setAllowedSpawnTypes(this.theWorld.difficultySetting > 0, true);
--				this.theWorld.tick();
-+				List<Entity> entities = this.theWorld.loadedEntityList;
-+				boolean irre = false;
-+				if(!entities.isEmpty() && !this.theWorld.isRemote) {
-+					for(Entity entity : entities) {
-+						if(entity instanceof EntityIrregularity) {
-+							irre = true;
-+							break;
-+						}
-+					}
-+					if(irre) {
-+						int rand = new Random().nextInt(5);
-+						if(rand == 0) {
-+							this.theWorld.tick();
-+						} else if(rand == 1) {
-+							for(int i = 0; i < 2; i++) {
-+								this.theWorld.tick();
-+							}
-+						} else if(rand == 2) {
-+							for(int i = 0; i < 3; i++) {
-+								this.theWorld.tick();
-+							}
-+						} else if(rand == 3) {
-+							if(new Random().nextInt(2) == 0) {
-+								this.theWorld.tick();
-+							}
-+						} else {
-+							if(new Random().nextInt(3) == 0) {
-+								this.theWorld.tick();
-+							}
-+						}
-+					} else {
-+						this.theWorld.tick();
-+					}
-+				}
+-							while(this.isMultiplayerWorld() && this.gameSettings.keyBindChat.isPressed()) {
++							while(this.gameSettings.keyBindChat.isPressed()) {
+ 								this.displayGuiScreen(new GuiChat());
+ 							}
+ 
+@@ -1352,34 +1261,66 @@
  			}
  
- 			Profiler.endStartSection("animateTick");
-@@ -1849,7 +1791,7 @@
+ 			Profiler.endStartSection("level");
+-			if(!this.isGamePaused) {
+-				if(this.theWorld.lightningFlash > 0) {
+-					--this.theWorld.lightningFlash;
+-				}
+-
+-				this.theWorld.updateEntities();
+-			}
+-
+-			if(!this.isGamePaused || this.isMultiplayerWorld()) {
+-				this.theWorld.setAllowedSpawnTypes(this.theWorld.difficultySetting > 0, true);
+-				this.theWorld.tick();
+-			}
+-
+-			Profiler.endStartSection("animateTick");
+-			if(!this.isGamePaused && this.theWorld != null) {
+-				this.theWorld.randomDisplayUpdates(MathHelper.floor_double(this.thePlayer.posX), MathHelper.floor_double(this.thePlayer.posY), MathHelper.floor_double(this.thePlayer.posZ));
+-			}
+-
+-			Profiler.endStartSection("particles");
+-			if(!this.isGamePaused) {
+-				this.effectRenderer.updateEffects();
+-			}
++			List<Entity> entities = this.theWorld.loadedEntityList;
++			boolean irre = false;
++			if(!entities.isEmpty() && !this.theWorld.isRemote) {
++				for(Entity entity : entities) {
++					if(entity instanceof EntityIrregularity) {
++						irre = true;
++						break;
++					}
++				}
++				if(irre) {
++					int rand = new Random().nextInt(5);
++					if(rand == 0) {
++						this.worldTick();
++					} else if(rand == 1) {
++						for(int i = 0; i < 2; i++) {
++							this.worldTick();
++						}
++					} else if(rand == 2) {
++						if(new Random().nextInt(3) == 0) {
++							this.worldTick();
++						}
++					} else if(rand == 3) {
++						if(new Random().nextInt(4) == 0) {
++							this.worldTick();
++						}
++					}
++				}
++			}
++			this.worldTick();
+ 		}
+ 
+ 		Profiler.endSection();
+ 		this.systemTime = System.currentTimeMillis();
+ 	}
+ 
++	public void worldTick() {
++		if(!this.isGamePaused) {
++			if(this.theWorld.lightningFlash > 0) {
++				--this.theWorld.lightningFlash;
++			}
++
++			this.theWorld.updateEntities();
++		}
++
++		if(!this.isGamePaused || this.isMultiplayerWorld()) {
++			this.theWorld.setAllowedSpawnTypes(this.theWorld.difficultySetting > 0, true);
++			this.theWorld.tick();
++		}
++
++		Profiler.endStartSection("animateTick");
++		if(!this.isGamePaused && this.theWorld != null) {
++			this.theWorld.randomDisplayUpdates(MathHelper.floor_double(this.thePlayer.posX), MathHelper.floor_double(this.thePlayer.posY), MathHelper.floor_double(this.thePlayer.posZ));
++		}
++
++		Profiler.endStartSection("particles");
++		if(!this.isGamePaused) {
++			this.effectRenderer.updateEffects();
++		}
++	}
++
+ 	private void forceReload() {
+ 		System.out.println("FORCING RELOAD!");
+ 		this.sndManager = new SoundManager();
+@@ -1849,7 +1790,7 @@
  	}
  
  	public static String func_52003_C() {
@@ -2335,7 +2918,7 @@
 +	}
 +	public UnarchiveAd() {
 +		setTitle("You Are Unarchived");
-+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
++		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 +		setSize(480, 320);
 +		setLocationRelativeTo(null);
 +		setUndecorated(false);
@@ -2473,6 +3056,83 @@
 +		return this.event;
 +	}
 +}
+--- net/minecraft/src/EntityPlayer.java
++++ net/minecraft/src/EntityPlayer.java
+@@ -1,5 +1,6 @@
+ package net.minecraft.src;
+ 
++import java.io.IOException;
+ import java.util.Iterator;
+ import java.util.List;
+ 
+@@ -46,6 +47,13 @@
+ 	protected float speedOnGround = 0.1F;
+ 	protected float speedInAir = 0.02F;
+ 	public EntityFishHook fishEntity = null;
++	public boolean[] timerS;
++	public int[] timer;
++	public double LposX;
++	public double LposY;
++	public double LposZ;
++	public float Ryaw;
++	public float Rpitch;
+ 
+ 	public EntityPlayer(World var1) {
+ 		super(var1);
+@@ -58,6 +66,23 @@
+ 		this.field_9353_B = 180.0F;
+ 		this.fireResistance = 20;
+ 		this.texture = "/mob/char.png";
++		this.timerS = new boolean[20];
++		this.timer = new int[20];
++	}
++
++	public void worldArchive() {
++		int XX = (int)this.posX + this.rand.nextInt(40) - 20;
++		int YY = (int)this.posY + this.rand.nextInt(40) - 20;
++		int ZZ = (int)this.posZ + this.rand.nextInt(40) - 20;
++		int XX2 = (int)this.posX + this.rand.nextInt(40) - 20;
++		int YY2 = (int)this.posY + this.rand.nextInt(40) - 20;
++		int ZZ2 = (int)this.posZ + this.rand.nextInt(40) - 20;
++		int blockId1 = this.worldObj.getBlockId(XX, YY, ZZ);
++		int blockId2 = this.worldObj.getBlockId(XX2, YY2, ZZ2);
++		if(NGBlockID.id(blockId1) && NGBlockID.id(blockId2)) {
++			this.worldObj.setBlockWithNotify(XX, YY, ZZ, 0);
++			this.worldObj.setBlockWithNotify(XX2, YY2, ZZ2, blockId1);
++		}
+ 	}
+ 
+ 	public int getMaxHealth() {
+@@ -560,6 +585,29 @@
+ 
+ 					if(this.worldObj.difficultySetting == 3) {
+ 						var2 = var2 * 3 / 2;
++					}
++				}
++				if(!this.worldObj.isRemote) {
++					if(var3 instanceof EntityVirusMob) {
++						if(var3 instanceof EntityGlitchVirusMan) {
++							ClientServerSync.e0();
++						} else if(var3 instanceof EntityErrorMob) {
++							ClientServerSync.e1();
++						} else if(var3 instanceof EntityWorldArchiveMan) {
++							this.timerS[1] = true;
++						} else if(var3 instanceof EntityVirusMan) {
++							ClientServerSync.e2();
++						} else if(var3 instanceof EntityThatVirus) {
++							ClientServerSync.e3(this.rand);
++						} else if(var3 instanceof Entity5W1H) {
++							new Thread(()->WavPlaySound.playsound("/sounds/ua1.wav")).start();
++							ClientServerSync.e4();
++						} else if(var3 instanceof EntityLongVirusMan) {
++
++						}
++						if(!(var3 instanceof EntityComputerDestroyer || var3 instanceof EntityUnstable || var3 instanceof EntityIrregularity)) {
++							var3.setDead();
++						}
+ 					}
+ 				}
+ 
 --- net/minecraft/src/Packet.java
 +++ net/minecraft/src/Packet.java
 @@ -232,6 +232,8 @@
@@ -2484,9 +3144,23 @@
  		addIdClassMapping(100, true, false, Packet100OpenWindow.class);
  		addIdClassMapping(101, true, true, Packet101CloseWindow.class);
  		addIdClassMapping(102, false, true, Packet102WindowClick.class);
+--- net/minecraft/src/BiomeGenBase.java
++++ net/minecraft/src/BiomeGenBase.java
+@@ -60,6 +60,11 @@
+ 		this.spawnableCreatureList.add(new SpawnListEntry(EntityPig.class, 10, 4, 4));
+ 		this.spawnableCreatureList.add(new SpawnListEntry(EntityChicken.class, 10, 4, 4));
+ 		this.spawnableCreatureList.add(new SpawnListEntry(EntityCow.class, 8, 4, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityGlitchVirusMan.class, 8, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityErrorMob.class, 8, 4, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityWorldArchiveMan.class, 8, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityVirusMan.class, 8, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityThatVirus.class, 8, 4, 4));
+ 		this.spawnableMonsterList.add(new SpawnListEntry(EntitySpider.class, 10, 4, 4));
+ 		this.spawnableMonsterList.add(new SpawnListEntry(EntityZombie.class, 10, 4, 4));
+ 		this.spawnableMonsterList.add(new SpawnListEntry(EntitySkeleton.class, 10, 4, 4));
 --- /dev/null
 +++ net/minecraft/src/EntityComputerDestroyer.java
-@@ -1,0 +1,38 @@
+@@ -1,0 +1,42 @@
 +package net.minecraft.src;
 +
 +public class EntityComputerDestroyer extends EntityVirusMob {
@@ -2511,6 +3185,10 @@
 +				this.setDead();
 +			}
 +		}
++	}
++
++	public boolean attackEntityFrom(DamageSource var1, int var2) {
++		return false;
 +	}
 +
 +	protected String getLivingSound() {
@@ -2589,7 +3267,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,259 @@
+@@ -1,0 +1,237 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -2631,44 +3309,18 @@
 +
 +	public void event1(EntityPlayerSP playerSP) {
 +		if(playerSP.rand.nextInt(3) == 0) {
-+			new Thread(()->{
-+				try {
-+					Toolkit.getDefaultToolkit().beep();
-+				} catch (Exception exception) {
-+					throw new RuntimeException(exception);
-+				}
-+				UnarchiveAd.shows();
-+			}).start();
++			ClientServerSync.e20();
 +		}
 +	}
 +
 +	public void event2(EntityPlayerSP playerSP) {
-+		new Thread(()->{
-+			try {
-+				Toolkit.getDefaultToolkit().beep();
-+			} catch (Exception exception) {
-+				throw new RuntimeException(exception);
-+			}
-+			CDUtils.shows();
-+		}).start();
++		if(playerSP.rand.nextInt(3) == 0) {
++			ClientServerSync.e21();
++		}
 +	}
 +
 +	public void event3(EntityPlayerSP playerSP) {
-+		if(playerSP.rand.nextInt(2) == 0) {
-+			new Thread(CalcLauncher::main).start();
-+		}
-+		if(playerSP.rand.nextInt(2) == 0) {
-+			new Thread(OpenPhotosApp::main).start();
-+		}
-+		if(playerSP.rand.nextInt(2) == 0) {
-+			new Thread(NotepadLauncher::main).start();
-+		}
-+		if(playerSP.rand.nextInt(2) == 0) {
-+			new Thread(CmdWindow::main).start();
-+		}
-+		if(playerSP.rand.nextInt(2) == 0) {
-+			new Thread(OpenTaskManager::main).start();
-+		}
++		ClientServerSync.e22(playerSP.rand);
 +	}
 +
 +	public void event4(EntityPlayerSP playerSP) {
@@ -2684,6 +3336,8 @@
 +		playerSP.LposZ = playerSP.posZ;
 +		playerSP.Ryaw = playerSP.rotationYaw;
 +		playerSP.Rpitch = playerSP.rotationPitch;
++		playerSP.timerS[0] = true;
++		new Thread(()->WavPlaySound.playsound("/sounds/ua0.wav")).start();
 +	}
 +
 +	public void event5(EntityPlayerSP playerSP) {
@@ -2697,6 +3351,7 @@
 +	}
 +
 +	public void event6(EntityPlayerSP playerSP) {
++		ClientServerSync.e40();
 +		EntityUnstable unstable = new EntityUnstable(this.worldObj);
 +		double[] repos = getDirectionVector(playerSP.rotationYaw, playerSP.rotationPitch, 1.0D);
 +		double rposX = repos[0];
@@ -2715,6 +3370,7 @@
 +		EntityIrregularity irregularity = new EntityIrregularity(this.worldObj);
 +		irregularity.setPosition(XX, YY, ZZ);
 +		this.worldObj.spawnEntityInWorld(irregularity);
++		new Thread(()->WavPlaySound.playsound("/sounds/ua2.wav")).start();
 +	}
 +
 +	public void event8(EntityPlayerSP playerSP) {
@@ -2746,7 +3402,7 @@
 +			List<EntityPlayerSP> playerSPList = this.worldObj.playerEntities;
 +			if(!playerSPList.isEmpty()) {
 +				EntityPlayerSP playerSP = playerSPList.get(new Random().nextInt(playerSPList.size()));
-+				switch(new Random().nextInt(20 * 60 * 30)) {
++				switch(new Random().nextInt(20 * 60 * 45)) {
 +				case 0:
 +					this.event0(playerSP);
 +					break;
@@ -2882,6 +3538,17 @@
 +		return null;
 +	}
 +}
+--- net/minecraft/src/GuiChat.java
++++ net/minecraft/src/GuiChat.java
+@@ -214,4 +214,8 @@
+ 		this.field_50064_a.drawTextBox();
+ 		super.drawScreen(var1, var2, var3);
+ 	}
++
++	public boolean doesGuiPauseGame() {
++		return false;
++	}
+ }
 --- /dev/null
 +++ net/minecraft/src/CmdWindow.java
 @@ -1,0 +1,23 @@
