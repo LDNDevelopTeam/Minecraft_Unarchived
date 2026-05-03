@@ -208,15 +208,21 @@
  		}
  
  		if(var1.id == 4) {
-@@ -279,7 +279,7 @@
+@@ -279,9 +279,11 @@
  		GL11.glScalef(var8, var8, var8);
  		this.drawCenteredString(this.fontRenderer, this.splashText, 0, -8, 16776960);
  		GL11.glPopMatrix();
 -		this.drawString(this.fontRenderer, "Minecraft 1.2.5", 2, this.height - 10, 16777215);
+-		String var9 = "Copyright Mojang AB. Do not distribute!";
+-		this.drawString(this.fontRenderer, var9, this.width - this.fontRenderer.getStringWidth(var9) - 2, this.height - 10, 16777215);
 +		this.drawString(this.fontRenderer, "Minecraft Unarchived", 2, this.height - 10, 16777215);
- 		String var9 = "Copyright Mojang AB. Do not distribute!";
- 		this.drawString(this.fontRenderer, var9, this.width - this.fontRenderer.getStringWidth(var9) - 2, this.height - 10, 16777215);
++		String var9 = "This version is not officially created by Mojang. It is fan-made.";
++		this.drawString(this.fontRenderer, var9, this.width - this.fontRenderer.getStringWidth(var9) - 2, this.height - 10 - 10, 16777215);
++		String var10 = "Copyright Mojang AB. Do not distribute!";
++		this.drawString(this.fontRenderer, var10, this.width - this.fontRenderer.getStringWidth(var10) - 2, this.height - 10, 16777215);
  		super.drawScreen(var1, var2, var3);
+ 	}
+ }
 --- /dev/null
 +++ net/minecraft/src/PanelUnarchived.java
 @@ -1,0 +1,29 @@
