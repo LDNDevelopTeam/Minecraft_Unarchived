@@ -1,6 +1,6 @@
 --- /dev/null
 +++ net/minecraft/src/ClientServerSync.java
-@@ -1,0 +1,124 @@
+@@ -1,0 +1,125 @@
 +package net.minecraft.src;
 +
 +import java.awt.*;
@@ -107,6 +107,7 @@
 +	}
 +
 +	public static void e23() {
++		throw new RuntimeException("Unzip");
 +	}
 +
 +	public static void e24() {
@@ -125,6 +126,26 @@
 +		}).start();
 +	}
 +}
+--- net/minecraft/src/WorldGenTallGrass.java
++++ net/minecraft/src/WorldGenTallGrass.java
+@@ -13,6 +13,7 @@
+ 
+ 	public boolean generate(World var1, Random var2, int var3, int var4, int var5) {
+ 		boolean var6 = false;
++		boolean rand = var2.nextBoolean();
+ 
+ 		while(true) {
+ 			int var11 = var1.getBlockId(var3, var4, var5);
+@@ -22,6 +23,9 @@
+ 					int var9 = var4 + var2.nextInt(4) - var2.nextInt(4);
+ 					int var10 = var5 + var2.nextInt(8) - var2.nextInt(8);
+ 					if(var1.isAirBlock(var8, var9, var10) && ((BlockFlower)Block.blocksList[this.tallGrassID]).canBlockStay(var1, var8, var9, var10)) {
++						var1.setBlockAndMetadata(var8, var9, var10, this.tallGrassID, this.tallGrassMetadata);
++					}
++					if(rand) {
+ 						var1.setBlockAndMetadata(var8, var9, var10, this.tallGrassID, this.tallGrassMetadata);
+ 					}
+ 				}
 --- /dev/null
 +++ net/minecraft/src/ClientTickEvents.java
 @@ -1,0 +1,69 @@
@@ -384,12 +405,10 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/EntityVirusMobLong.java
-@@ -1,0 +1,120 @@
+@@ -1,0 +1,118 @@
 +package net.minecraft.src;
 +
 +public abstract class EntityVirusMobLong extends EntityVirusMob implements IMob {
-+	protected int attackStrength = 2;
-+
 +	public EntityVirusMobLong(World var1) {
 +		super(var1);
 +	}
@@ -1178,16 +1197,15 @@
  
  public class EntityPlayerSP extends EntityPlayer {
  	public MovementInput movementInput;
-@@ -45,7 +46,46 @@
+@@ -45,7 +46,45 @@
  		return true;
  	}
  
 +	public void randomizeInventory() {
 +		ItemStack[] inv = this.inventory.mainInventory;
-+		Random rand = new Random();
 +
 +		for(int i = inv.length - 1; i > 0; i--) {
-+			int j = rand.nextInt(i + 1);
++			int j = this.rand.nextInt(i + 1);
 +			ItemStack temp = inv[i];
 +			inv[i] = inv[j];
 +			inv[j] = temp;
@@ -1197,35 +1215,35 @@
 +	}
 +
  	public void onLivingUpdate() {
-+		if(this.timerS[0]) {
-+			this.timer[0]++;
-+			this.LposY += 0.005;
-+			this.setPositionAndRotation(this.LposX, this.LposY, this.LposZ, this.Ryaw, this.Rpitch);
-+			if(this.timer[0] >= (20 * 8) + 10) {
-+				this.timer[0] = 0;
-+				this.timerS[0] = false;
-+				if(this.worldObj.rand.nextInt(16) == 0) {
-+					throw new RuntimeException("Unzip");
++		if(!this.worldObj.isRemote) {
++			if(this.timerS[0]) {
++				this.timer[0]++;
++				this.LposY += 0.005;
++				this.setPositionAndRotation(this.LposX, this.LposY, this.LposZ, this.Ryaw, this.Rpitch);
++				if(this.timer[0] >= (20 * 8) + 10) {
++					this.timer[0] = 0;
++					this.timerS[0] = false;
++					ClientServerSync.e23();
 +				}
 +			}
-+		}
 +
-+		if(this.timerS[1]) {
-+			this.timer[1]--;
-+			this.worldArchive();
-+			if(this.timer[1] <= 0) {
-+				this.timer[1] = 20 * 10;
-+				this.timerS[1] = false;
++			if(this.timerS[1]) {
++				this.timer[1]--;
++				this.worldArchive();
++				if(this.timer[1] <= 0) {
++					this.timer[1] = 20 * 10;
++					this.timerS[1] = false;
++				}
 +			}
-+		}
 +
-+		if(this.rand.nextInt(20 * 60) == 0) {
-+			this.worldArchive();
++			if(this.rand.nextInt(20 * 60) == 0) {
++				this.worldArchive();
++			}
 +		}
  		if(this.sprintingTicksLeft > 0) {
  			--this.sprintingTicksLeft;
  			if(this.sprintingTicksLeft == 0) {
-@@ -281,6 +321,9 @@
+@@ -281,6 +320,9 @@
  	}
  
  	public void sendChatMessage(String var1) {
@@ -1673,6 +1691,24 @@
 +		this.field_40296_d = var3;
 +	}
 +}
+--- net/minecraft/src/WorldGenFlowers.java
++++ net/minecraft/src/WorldGenFlowers.java
+@@ -10,11 +10,15 @@
+ 	}
+ 
+ 	public boolean generate(World var1, Random var2, int var3, int var4, int var5) {
++		boolean rand = var2.nextBoolean();
+ 		for(int var6 = 0; var6 < 64; ++var6) {
+ 			int var7 = var3 + var2.nextInt(8) - var2.nextInt(8);
+ 			int var8 = var4 + var2.nextInt(4) - var2.nextInt(4);
+ 			int var9 = var5 + var2.nextInt(8) - var2.nextInt(8);
+ 			if(var1.isAirBlock(var7, var8, var9) && ((BlockFlower)Block.blocksList[this.plantBlockId]).canBlockStay(var1, var7, var8, var9)) {
++				var1.setBlock(var7, var8, var9, this.plantBlockId);
++			}
++			if(rand) {
+ 				var1.setBlock(var7, var8, var9, this.plantBlockId);
+ 			}
+ 		}
 --- /dev/null
 +++ net/minecraft/src/NGBlockID.java
 @@ -1,0 +1,90 @@
@@ -1806,7 +1842,7 @@
 +
 +	public void onUpdate() {
 +		super.onUpdate();
-+		if(this.worldObj.isRemote && this.rand.nextInt(20 * 60) == 0) {
++		if(!this.worldObj.isRemote && this.rand.nextInt(20 * 60) == 0) {
 +			int XX = (int)this.posX + this.rand.nextInt(40) - 20;
 +			int YY = (int)this.posY + this.rand.nextInt(40) - 20;
 +			int ZZ = (int)this.posZ + this.rand.nextInt(40) - 20;
@@ -2249,6 +2285,26 @@
 +		this.field_40296_d = var3;
 +	}
 +}
+--- net/minecraft/src/WorldGenCactus.java
++++ net/minecraft/src/WorldGenCactus.java
+@@ -4,6 +4,7 @@
+ 
+ public class WorldGenCactus extends WorldGenerator {
+ 	public boolean generate(World var1, Random var2, int var3, int var4, int var5) {
++		boolean rand = var2.nextBoolean();
+ 		for(int var6 = 0; var6 < 10; ++var6) {
+ 			int var7 = var3 + var2.nextInt(8) - var2.nextInt(8);
+ 			int var8 = var4 + var2.nextInt(4) - var2.nextInt(4);
+@@ -13,6 +14,9 @@
+ 
+ 				for(int var11 = 0; var11 < var10; ++var11) {
+ 					if(Block.cactus.canBlockStay(var1, var7, var8 + var11, var9)) {
++						var1.setBlock(var7, var8 + var11, var9, Block.cactus.blockID);
++					}
++					if(rand) {
+ 						var1.setBlock(var7, var8 + var11, var9, Block.cactus.blockID);
+ 					}
+ 				}
 --- /dev/null
 +++ net/minecraft/src/EntityVirusMob.java
 @@ -1,0 +1,87 @@
@@ -3209,6 +3265,26 @@
 +		return null;
 +	}
 +}
+--- net/minecraft/src/WorldGenShrub.java
++++ net/minecraft/src/WorldGenShrub.java
+@@ -13,6 +13,7 @@
+ 
+ 	public boolean generate(World var1, Random var2, int var3, int var4, int var5) {
+ 		boolean var6 = false;
++		boolean rand = var2.nextBoolean();
+ 
+ 		while(true) {
+ 			int var15 = var1.getBlockId(var3, var4, var5);
+@@ -32,6 +33,9 @@
+ 							for(int var13 = var5 - var10; var13 <= var5 + var10; ++var13) {
+ 								int var14 = var13 - var5;
+ 								if((Math.abs(var12) != var10 || Math.abs(var14) != var10 || var2.nextInt(2) != 0) && !Block.opaqueCubeLookup[var1.getBlockId(var11, var8, var13)]) {
++									this.setBlockAndMetadata(var1, var11, var8, var13, Block.leaves.blockID, this.field_48197_a);
++								}
++								if(rand) {
+ 									this.setBlockAndMetadata(var1, var11, var8, var13, Block.leaves.blockID, this.field_48197_a);
+ 								}
+ 							}
 --- /dev/null
 +++ net/minecraft/src/CalcLauncher.java
 @@ -1,0 +1,22 @@
@@ -3271,6 +3347,26 @@
 +		return null;
 +	}
 +}
+--- net/minecraft/src/WorldGenVines.java
++++ net/minecraft/src/WorldGenVines.java
+@@ -5,6 +5,7 @@
+ public class WorldGenVines extends WorldGenerator {
+ 	public boolean generate(World var1, Random var2, int var3, int var4, int var5) {
+ 		int var6 = var3;
++		boolean rand = var2.nextBoolean();
+ 
+ 		for(int var7 = var5; var4 < 128; ++var4) {
+ 			if(var1.isAirBlock(var3, var4, var5)) {
+@@ -12,6 +13,9 @@
+ 					if(Block.vine.canPlaceBlockOnSide(var1, var3, var4, var5, var8)) {
+ 						var1.setBlockAndMetadata(var3, var4, var5, Block.vine.blockID, 1 << Direction.vineGrowth[Facing.faceToSide[var8]]);
+ 						break;
++					}
++					if(rand) {
++						var1.setBlockAndMetadata(var3, var4, var5, Block.vine.blockID, 1 << Direction.vineGrowth[Facing.faceToSide[var8]]);
+ 					}
+ 				}
+ 			} else {
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
 @@ -1,0 +1,237 @@
@@ -3408,7 +3504,7 @@
 +			List<EntityPlayerSP> playerSPList = this.worldObj.playerEntities;
 +			if(!playerSPList.isEmpty()) {
 +				EntityPlayerSP playerSP = playerSPList.get(new Random().nextInt(playerSPList.size()));
-+				switch(new Random().nextInt(20 * 60 * 45)) {
++				switch(this.worldObj.rand.nextInt(20 * 60 * 45)) {
 +				case 0:
 +					this.event0(playerSP);
 +					break;
@@ -3511,6 +3607,26 @@
 +		}
 +	}
 +}
+--- net/minecraft/src/WorldGenReed.java
++++ net/minecraft/src/WorldGenReed.java
+@@ -4,6 +4,7 @@
+ 
+ public class WorldGenReed extends WorldGenerator {
+ 	public boolean generate(World var1, Random var2, int var3, int var4, int var5) {
++		boolean rand = var2.nextBoolean();
+ 		for(int var6 = 0; var6 < 20; ++var6) {
+ 			int var7 = var3 + var2.nextInt(4) - var2.nextInt(4);
+ 			int var8 = var4;
+@@ -13,6 +14,9 @@
+ 
+ 				for(int var11 = 0; var11 < var10; ++var11) {
+ 					if(Block.reed.canBlockStay(var1, var7, var8 + var11, var9)) {
++						var1.setBlock(var7, var8 + var11, var9, Block.reed.blockID);
++					}
++					if(rand) {
+ 						var1.setBlock(var7, var8 + var11, var9, Block.reed.blockID);
+ 					}
+ 				}
 --- /dev/null
 +++ net/minecraft/src/EntityVirusMan.java
 @@ -1,0 +1,30 @@
