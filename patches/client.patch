@@ -22,7 +22,7 @@
 +	}
 +
 +	public static void e3(Random rand) {
-+		int random = rand.nextInt(10);
++		int random = rand.nextInt(8);
 +		if(random == 0) {
 +			new Thread(()->{
 +				try {
@@ -278,20 +278,21 @@
 +}
 --- net/minecraft/src/RenderManager.java
 +++ net/minecraft/src/RenderManager.java
-@@ -70,6 +70,16 @@
+@@ -70,6 +70,17 @@
  		this.entityRenderMap.put(EntityBoat.class, new RenderBoat());
  		this.entityRenderMap.put(EntityFishHook.class, new RenderFish());
  		this.entityRenderMap.put(EntityLightningBolt.class, new RenderLightningBolt());
++
 +		this.entityRenderMap.put(EntityGlitchVirusMan.class, new RenderBiped(new ModelBiped(), 0.5F));
 +		this.entityRenderMap.put(EntityErrorMob.class, new RenderBiped(new ModelBiped(), 0.5F));
 +		this.entityRenderMap.put(EntityWorldArchiveMan.class, new RenderBiped(new ModelBiped(), 0.5F));
 +		this.entityRenderMap.put(EntityVirusMan.class, new RenderBiped(new ModelBiped(), 0.5F));
-+		this.entityRenderMap.put(EntityThatVirus.class, new RenderThatVirus(new ModelThatVirus(), 0.5F));
++		this.entityRenderMap.put(EntityThatVirus.class, new RenderThatVirus());
 +		this.entityRenderMap.put(EntityComputerDestroyer.class, new RenderBiped(new ModelBiped(), 0.5F));
 +		this.entityRenderMap.put(Entity5W1H.class, new RenderBiped(new ModelBiped(), 0.5F));
 +		this.entityRenderMap.put(EntityUnstable.class, new RenderBiped(new ModelBiped(), 0.5F));
-+		this.entityRenderMap.put(EntityIrregularity.class, new RenderIrregularity(new ModelIrregularity(), 0.5F));
-+		this.entityRenderMap.put(EntityLongVirusMan.class, new RenderLongVirusMan(new ModelLongVirusMan(), 0.5F));
++		this.entityRenderMap.put(EntityIrregularity.class, new RenderIrregularity());
++		this.entityRenderMap.put(EntityLongVirusMan.class, new RenderLongVirusMan());
  		Iterator var1 = this.entityRenderMap.values().iterator();
  
  		while(var1.hasNext()) {
@@ -994,7 +995,7 @@
  		addMapping(EntityVillager.class, "Villager", 120, 5651507, 12422002);
  		addMapping(EntityEnderCrystal.class, "EnderCrystal", 200);
 +
-+		addMapping(EntityVirusMan.class, "VirusMan", 100);
++		addMapping(EntityGlitchVirusMan.class, "GlitchVirusMan", 100);
 +		addMapping(EntityErrorMob.class, "ErrorMob", 101);
 +		addMapping(EntityWorldArchiveMan.class, "WorldArchiveMan", 102);
 +		addMapping(EntityVirusMan.class, "VirusMan", 103);
@@ -1070,7 +1071,7 @@
 +		this.bipedRightLeg.setRotationPoint(-2.0F, 10.0F + var2, 0.0F);
 +	}
 +
-+	public void render(float var1, float var2, float var3, float var4, float var5, float var6) {
++	public void render(Entity entity, float var1, float var2, float var3, float var4, float var5, float var6) {
 +		this.setRotationAngles(var1, var2, var3, var4, var5, var6);
 +		this.rotateGT();
 +		this.bipedHead.render(var6);
@@ -1266,25 +1267,17 @@
  	public boolean isSneaking() {
 --- /dev/null
 +++ net/minecraft/src/RenderThatVirus.java
-@@ -1,0 +1,19 @@
+@@ -1,0 +1,11 @@
 +package net.minecraft.src;
 +
 +import org.lwjgl.opengl.GL11;
 +
 +public class RenderThatVirus extends RenderLiving {
-+	protected ModelThatVirus modelBipedMain;
-+	protected float field_40296_d;
 +
-+	public RenderThatVirus(ModelThatVirus var1, float var2) {
-+		this(var1, var2, 1.0F);
-+		this.modelBipedMain = var1;
++	public RenderThatVirus() {
++		super(new ModelThatVirus(0.0F), 0.5F);
 +	}
 +
-+	public RenderThatVirus(ModelThatVirus var1, float var2, float var3) {
-+		super(var1, var2);
-+		this.modelBipedMain = var1;
-+		this.field_40296_d = var3;
-+	}
 +}
 --- /dev/null
 +++ net/minecraft/src/EntityErrorMob.java
@@ -1493,7 +1486,7 @@
 +public class EntityThatVirus extends EntityVirusMob {
 +	public EntityThatVirus(World var1) {
 +		super(var1);
-+		this.texture = "/addmob/VirusMan.png";
++		this.texture = "/addmob/That_Virus.png";
 +		this.moveSpeed = 1.0F;
 +		this.attackStrength = 3;
 +	}
@@ -1684,22 +1677,12 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/RenderLongVirusMan.java
-@@ -1,0 +1,17 @@
+@@ -1,0 +1,7 @@
 +package net.minecraft.src;
 +
 +public class RenderLongVirusMan extends RenderLiving {
-+	protected ModelLongVirusMan modelBipedMain;
-+	protected float field_40296_d;
-+
-+	public RenderLongVirusMan(ModelLongVirusMan var1, float var2) {
-+		this(var1, var2, 1.0F);
-+		this.modelBipedMain = var1;
-+	}
-+
-+	public RenderLongVirusMan(ModelLongVirusMan var1, float var2, float var3) {
-+		super(var1, var2);
-+		this.modelBipedMain = var1;
-+		this.field_40296_d = var3;
++	public RenderLongVirusMan() {
++		super(new ModelLongVirusMan(0.0F), 0.5F);
 +	}
 +}
 --- net/minecraft/src/WorldGenFlowers.java
@@ -2212,7 +2195,7 @@
 +		this.bipedLeftLeg.mirror = true;
 +	}
 +
-+	public void render(float var1, float var2, float var3, float var4, float var5, float var6) {
++	public void render(Entity entity ,float var1, float var2, float var3, float var4, float var5, float var6) {
 +		this.setRotationAngles(var1, var2, var3, var4, var5, var6);
 +		this.bipedHead.render(var6);
 +		this.bipedHeadWear.render(var6);
@@ -2278,22 +2261,13 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/RenderIrregularity.java
-@@ -1,0 +1,17 @@
+@@ -1,0 +1,8 @@
 +package net.minecraft.src;
 +
 +public class RenderIrregularity extends RenderLiving {
-+	protected ModelIrregularity modelBipedMain;
-+	protected float field_40296_d;
 +
-+	public RenderIrregularity(ModelIrregularity var1, float var2) {
-+		this(var1, var2, 1.0F);
-+		this.modelBipedMain = var1;
-+	}
-+
-+	public RenderIrregularity(ModelIrregularity var1, float var2, float var3) {
-+		super(var1, var2);
-+		this.modelBipedMain = var1;
-+		this.field_40296_d = var3;
++	public RenderIrregularity() {
++		super(new ModelIrregularity(), 0.5F);
 +	}
 +}
 --- net/minecraft/src/WorldGenCactus.java
@@ -3223,11 +3197,11 @@
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityPig.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityChicken.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityCow.class, 8, 4, 4));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityGlitchVirusMan.class, 8, 1, 1));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityErrorMob.class, 8, 4, 4));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityWorldArchiveMan.class, 8, 1, 1));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityVirusMan.class, 8, 1, 1));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityThatVirus.class, 8, 4, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityGlitchVirusMan.class, 6, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityErrorMob.class, 4, 4, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityWorldArchiveMan.class, 6, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityVirusMan.class, 6, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityThatVirus.class, 6, 1, 1));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySpider.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntityZombie.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySkeleton.class, 10, 4, 4));
@@ -3708,3 +3682,85 @@
 +		}
 +	}
 +}
+--- net/minecraft/src/BlockReed.java
++++ net/minecraft/src/BlockReed.java
+@@ -12,21 +12,23 @@
+ 	}
+ 
+ 	public void updateTick(World var1, int var2, int var3, int var4, Random var5) {
+-		if(var1.isAirBlock(var2, var3 + 1, var4)) {
+-			int var6;
+-			for(var6 = 1; var1.getBlockId(var2, var3 - var6, var4) == this.blockID; ++var6) {
+-			}
++		/**
++		 if(var1.isAirBlock(var2, var3 + 1, var4)) {
++		 int var6;
++		 for(var6 = 1; var1.getBlockId(var2, var3 - var6, var4) == this.blockID; ++var6) {
++		 }
+ 
+-			if(var6 < 3) {
+-				int var7 = var1.getBlockMetadata(var2, var3, var4);
+-				if(var7 == 15) {
+-					var1.setBlockWithNotify(var2, var3 + 1, var4, this.blockID);
+-					var1.setBlockMetadataWithNotify(var2, var3, var4, 0);
+-				} else {
+-					var1.setBlockMetadataWithNotify(var2, var3, var4, var7 + 1);
+-				}
+-			}
+-		}
++		 if(var6 < 3) {
++		 int var7 = var1.getBlockMetadata(var2, var3, var4);
++		 if(var7 == 15) {
++		 var1.setBlockWithNotify(var2, var3 + 1, var4, this.blockID);
++		 var1.setBlockMetadataWithNotify(var2, var3, var4, 0);
++		 } else {
++		 var1.setBlockMetadataWithNotify(var2, var3, var4, var7 + 1);
++		 }
++		 }
++		 }
++		 */
+ 
+ 	}
+ 
+--- net/minecraft/src/BlockCactus.java
++++ net/minecraft/src/BlockCactus.java
+@@ -9,22 +9,23 @@
+ 	}
+ 
+ 	public void updateTick(World var1, int var2, int var3, int var4, Random var5) {
+-		if(var1.isAirBlock(var2, var3 + 1, var4)) {
+-			int var6;
+-			for(var6 = 1; var1.getBlockId(var2, var3 - var6, var4) == this.blockID; ++var6) {
+-			}
+-
+-			if(var6 < 3) {
+-				int var7 = var1.getBlockMetadata(var2, var3, var4);
+-				if(var7 == 15) {
+-					var1.setBlockWithNotify(var2, var3 + 1, var4, this.blockID);
+-					var1.setBlockMetadataWithNotify(var2, var3, var4, 0);
+-				} else {
+-					var1.setBlockMetadataWithNotify(var2, var3, var4, var7 + 1);
+-				}
+-			}
+-		}
+-
++		/**
++		 if(var1.isAirBlock(var2, var3 + 1, var4)) {
++		 int var6;
++		 for(var6 = 1; var1.getBlockId(var2, var3 - var6, var4) == this.blockID; ++var6) {
++		 }
++
++		 if(var6 < 3) {
++		 int var7 = var1.getBlockMetadata(var2, var3, var4);
++		 if(var7 == 15) {
++		 var1.setBlockWithNotify(var2, var3 + 1, var4, this.blockID);
++		 var1.setBlockMetadataWithNotify(var2, var3, var4, 0);
++		 } else {
++		 var1.setBlockMetadataWithNotify(var2, var3, var4, var7 + 1);
++		 }
++		 }
++		 }
++		 */
+ 	}
+ 
+ 	public AxisAlignedBB getCollisionBoundingBoxFromPool(World var1, int var2, int var3, int var4) {
