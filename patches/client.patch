@@ -1,18 +1,43 @@
 --- /dev/null
 +++ net/minecraft/src/ClientServerSync.java
-@@ -1,0 +1,125 @@
+@@ -1,0 +1,149 @@
 +package net.minecraft.src;
 +
++import net.minecraft.client.Minecraft;
++import javax.swing.*;
 +import java.awt.*;
 +import java.io.IOException;
 +import java.util.Random;
 +
 +public class ClientServerSync {
-+	public static void e0() {
++
++	private static void spawnRandomizedNativePopup(Random rand) {
++		new Thread(()->{
++			String val = generateLongNumericString(60, rand);
++			JOptionPane pane = new JOptionPane(val, rand.nextInt(4));
++			JDialog dialog = pane.createDialog(generateLongNumericString(10, rand));
++			Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
++			dialog.setLocation(rand.nextInt(screen.width - 200), rand.nextInt(screen.height - 200));
++			dialog.setModal(false);
++			dialog.setVisible(true);
++		}).start();
 +	}
 +
-+	public static void e1() {
++	private static String generateLongNumericString(int len, Random rand) {
++		StringBuilder sb = new StringBuilder();
++		for(int i = 0; i < len; i++) sb.append(rand.nextInt(10));
++		return sb.toString();
++	}
 +
++	public static void e0() {
++		new Thread(()->WavPlaySound.playsound("/sounds/ua3.wav")).start();
++		Minecraft.theMinecraft.clientTickEvents.timerS[2] = true;
++	}
++
++	public static void e1(Random rand) {
++		for(int i = 0; i < 10; i++) {
++			spawnRandomizedNativePopup(rand);
++		}
 +	}
 +
 +	public static void e2() {
@@ -31,8 +56,6 @@
 +					throw new RuntimeException(e);
 +				}
 +			}).start();
-+		} else if(random == 1) {
-+
 +		}
 +	}
 +
@@ -107,10 +130,11 @@
 +	}
 +
 +	public static void e23() {
-+		throw new RuntimeException("Unzip");
 +	}
 +
 +	public static void e24() {
++		Minecraft.theMinecraft.ingameGUI.startConstantSawtooth();
++		Minecraft.theMinecraft.clientTickEvents.timerS[1] = true;
 +	}
 +
 +	public static void e25() {
@@ -144,169 +168,169 @@
 +import java.awt.Frame;
 +
 +public class GuiError extends GuiScreen {
-+    private final Random rand = new Random();
-+    private long popupCooldown = 0;
-+    private long startTime;
-+    private long killTime;
-+    private SourceDataLine line;
-+    private boolean isNoiseRunning = true;
++	private final Random rand = new Random();
++	private long popupCooldown = 0;
++	private long startTime;
++	private long killTime;
++	private SourceDataLine line;
++	private boolean isNoiseRunning = true;
 +
-+    private int originalX = -1;
-+    private int originalY = -1;
-+    private boolean hasStoredPos = false;
++	private int originalX = -1;
++	private int originalY = -1;
++	private boolean hasStoredPos = false;
 +
-+    public GuiError() {
-+        this.startTime = System.currentTimeMillis();
-+        this.killTime = 7000;
-+        
-+        try {
-+            // Capture the exact mode before LaunchWrapper interferes
-+            DisplayMode targetMode = Display.getDisplayMode();
-+            
-+            if (Display.isFullscreen()) {
-+                Display.setFullscreen(false);
-+            }
-+            
-+            // Re-apply the resolution to the LWJGL Display
-+            Display.setDisplayMode(targetMode);
-+            
-+            // --- AWT OVERRIDE ---
-+            // We search for the actual heavy-weight Java Frame to force resizeability off
-+            for (Frame frame : Frame.getFrames()) {
-+                if (frame.isVisible()) {
-+                    frame.setResizable(false); // Disables the maximize button and manual dragging
-+                    // If the size is wrong, we force it back at the OS level
-+                    frame.setSize(targetMode.getWidth(), targetMode.getHeight());
-+                }
-+            }
-+        } catch (Exception e) {
-+            e.printStackTrace();
-+        }
-+        
-+        this.startConstantSawtooth();
-+    }
++	public GuiError() {
++		this.startTime = System.currentTimeMillis();
++		this.killTime = 7000;
 +
-+    private void startConstantSawtooth() {
-+        new Thread(() -> {
-+            try {
-+                AudioFormat format = new AudioFormat(44100, 8, 1, true, false);
-+                line = AudioSystem.getSourceDataLine(format);
-+                line.open(format, 4096);
-+                line.start();
++		try {
++			// Capture the exact mode before LaunchWrapper interferes
++			DisplayMode targetMode = Display.getDisplayMode();
 +
-+                byte[] buffer = new byte[1024];
-+                double phase = 0;
-+                final double frequency = 44.0; // Constant low-end rumble
++			if(Display.isFullscreen()) {
++				Display.setFullscreen(false);
++			}
 +
-+                while (isNoiseRunning) {
-+                    for (int i = 0; i < buffer.length; i++) {
-+                        double sample = (phase % 1.0) * 2.0 - 1.0;
-+                        buffer[i] = (byte) (sample * 127.0 * 4.0); // Extreme clipping
-+                        phase += frequency / 44100.0;
-+                    }
-+                    line.write(buffer, 0, buffer.length);
-+                }
-+            } catch (Exception e) { e.printStackTrace(); }
-+        }).start();
-+    }
++			// Re-apply the resolution to the LWJGL Display
++			Display.setDisplayMode(targetMode);
 +
-+    public void drawScreen(int var1, int var2, float var3) {
-+        // --- WINDOW SHAKE ---
-+        if (Display.isVisible()) {
-+            if (!hasStoredPos) {
-+                originalX = Display.getX();
-+                originalY = Display.getY();
-+                hasStoredPos = true;
-+            }
++			// --- AWT OVERRIDE ---
++			// We search for the actual heavy-weight Java Frame to force resizeability off
++			for(Frame frame : Frame.getFrames()) {
++				if(frame.isVisible()) {
++					frame.setResizable(false); // Disables the maximize button and manual dragging
++					// If the size is wrong, we force it back at the OS level
++					frame.setSize(targetMode.getWidth(), targetMode.getHeight());
++				}
++			}
++		} catch (Exception e) {
++			e.printStackTrace();
++		}
 +
-+            int shakeRadius = 25;
-+            Display.setLocation(originalX + (rand.nextInt(shakeRadius * 2) - shakeRadius), 
-+                                originalY + (rand.nextInt(shakeRadius * 2) - shakeRadius));
-+        }
++		this.startConstantSawtooth();
++	}
 +
-+        // --- VISUAL OVERLOAD ---
-+        GL11.glPushMatrix();
-+        GL11.glScalef(1.3F, 1.3F, 1.0F); // Zoom in more to hide window borders
-+        GL11.glTranslatef(-width * 0.15F, -height * 0.15F, 0);
-+        GL11.glTranslatef((rand.nextFloat() - 0.5F) * 80.0F, (rand.nextFloat() - 0.5F) * 80.0F, 0);
++	private void startConstantSawtooth() {
++		new Thread(()->{
++			try {
++				AudioFormat format = new AudioFormat(44100, 8, 1, true, false);
++				line = AudioSystem.getSourceDataLine(format);
++				line.open(format, 4096);
++				line.start();
 +
-+        if (rand.nextInt(3) == 0) {
-+            GL11.glColorMask(rand.nextBoolean(), rand.nextBoolean(), rand.nextBoolean(), true);
-+        } else {
-+            GL11.glColorMask(true, true, true, true);
-+        }
++				byte[] buffer = new byte[1024];
++				double phase = 0;
++				final double frequency = 44.0; // Constant low-end rumble
 +
-+        GL11.glDisable(GL11.GL_TEXTURE_2D);
-+        for (int i = 0; i < 450; i++) {
-+            this.drawGradientRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100, 
-+                                  rand.nextInt(width + 400), rand.nextInt(height + 400), 
-+                                  rand.nextInt() | 0xFF000000, rand.nextInt() | 0xFF000000);
-+        }
++				while(isNoiseRunning) {
++					for(int i = 0; i < buffer.length; i++) {
++						double sample = (phase % 1.0) * 2.0 - 1.0;
++						buffer[i] = (byte)(sample * 127.0 * 4.0); // Extreme clipping
++						phase += frequency / 44100.0;
++					}
++					line.write(buffer, 0, buffer.length);
++				}
++			} catch (Exception e) {e.printStackTrace();}
++		}).start();
++	}
 +
-+        GL11.glEnable(GL11.GL_TEXTURE_2D);
-+        GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
-+        for (int i = 0; i < 120; i++) {
-+            GL11.glColor4f(rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), rand.nextFloat());
-+            this.drawTexturedModalRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100, 
-+                                       rand.nextInt(256), rand.nextInt(256), 256, 256);
-+        }
++	public void drawScreen(int var1, int var2, float var3) {
++		// --- WINDOW SHAKE ---
++		if(Display.isVisible()) {
++			if(!hasStoredPos) {
++				originalX = Display.getX();
++				originalY = Display.getY();
++				hasStoredPos = true;
++			}
 +
-+        // MICRO NUMBERS
-+        GL11.glPushMatrix();
-+        float textSize = 0.35F; // Even smaller
-+        GL11.glScalef(textSize, textSize, 1.0F);
-+        for (int i = 0; i < 600; i++) {
-+            this.fontRenderer.drawStringWithShadow("" + Math.abs(rand.nextLong()), 
-+                                                   rand.nextInt((int)(width/textSize)), 
-+                                                   rand.nextInt((int)(height/textSize)), 
-+                                                   rand.nextInt(0xFFFFFF));
-+        }
-+        GL11.glPopMatrix(); 
++			int shakeRadius = 25;
++			Display.setLocation(originalX + (rand.nextInt(shakeRadius * 2) - shakeRadius),
++					originalY + (rand.nextInt(shakeRadius * 2) - shakeRadius));
++		}
 +
-+        if (System.currentTimeMillis() - popupCooldown > 150) {
-+            spawnRandomizedNativePopup();
-+            popupCooldown = System.currentTimeMillis();
-+        }
++		// --- VISUAL OVERLOAD ---
++		GL11.glPushMatrix();
++		GL11.glScalef(1.3F, 1.3F, 1.0F); // Zoom in more to hide window borders
++		GL11.glTranslatef(-width * 0.15F, -height * 0.15F, 0);
++		GL11.glTranslatef((rand.nextFloat() - 0.5F) * 80.0F, (rand.nextFloat() - 0.5F) * 80.0F, 0);
 +
-+        GL11.glColorMask(true, true, true, true);
++		if(rand.nextInt(3) == 0) {
++			GL11.glColorMask(rand.nextBoolean(), rand.nextBoolean(), rand.nextBoolean(), true);
++		} else {
++			GL11.glColorMask(true, true, true, true);
++		}
 +
-+        if (System.currentTimeMillis() - startTime > killTime) {
-+            System.exit(0);
-+        }
++		GL11.glDisable(GL11.GL_TEXTURE_2D);
++		for(int i = 0; i < 450; i++) {
++			this.drawGradientRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100,
++					rand.nextInt(width + 400), rand.nextInt(height + 400),
++					rand.nextInt() | 0xFF000000, rand.nextInt() | 0xFF000000);
++		}
 +
-+        GL11.glPopMatrix();
-+        super.drawScreen(var1, var2, var3);
-+    }
++		GL11.glEnable(GL11.GL_TEXTURE_2D);
++		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
++		for(int i = 0; i < 120; i++) {
++			GL11.glColor4f(rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), rand.nextFloat());
++			this.drawTexturedModalRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100,
++					rand.nextInt(256), rand.nextInt(256), 256, 256);
++		}
 +
-+    private void spawnRandomizedNativePopup() {
-+        new Thread(() -> {
-+            String val = generateLongNumericString(60);
-+            JOptionPane pane = new JOptionPane(val, rand.nextInt(4));
-+            JDialog dialog = pane.createDialog(generateLongNumericString(10));
-+            Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-+            dialog.setLocation(rand.nextInt(screen.width - 200), rand.nextInt(screen.height - 200));
-+            dialog.setModal(false);
-+            dialog.setVisible(true);
-+        }).start();
-+    }
++		// MICRO NUMBERS
++		GL11.glPushMatrix();
++		float textSize = 0.35F; // Even smaller
++		GL11.glScalef(textSize, textSize, 1.0F);
++		for(int i = 0; i < 600; i++) {
++			this.fontRenderer.drawStringWithShadow("" + Math.abs(rand.nextLong()),
++					rand.nextInt((int)(width / textSize)),
++					rand.nextInt((int)(height / textSize)),
++					rand.nextInt(0xFFFFFF));
++		}
++		GL11.glPopMatrix();
 +
-+    private String generateLongNumericString(int len) {
-+        StringBuilder sb = new StringBuilder();
-+        for(int i = 0; i < len; i++) sb.append(rand.nextInt(10));
-+        return sb.toString();
-+    }
++		if(System.currentTimeMillis() - popupCooldown > 150) {
++			spawnRandomizedNativePopup();
++			popupCooldown = System.currentTimeMillis();
++		}
 +
-+    public void onGuiClosed() {
-+        this.isNoiseRunning = false;
-+        if (line != null) { line.stop(); line.close(); }
-+        if (hasStoredPos) Display.setLocation(originalX, originalY);
-+        // Restore resizeability if the GUI is closed normally
-+        for (Frame frame : Frame.getFrames()) frame.setResizable(true);
-+    }
++		GL11.glColorMask(true, true, true, true);
 +
-+    protected void keyTyped(char var1, int var2) {
-+        return;
-+    }
++		if(System.currentTimeMillis() - startTime > killTime) {
++			System.exit(0);
++		}
++
++		GL11.glPopMatrix();
++		super.drawScreen(var1, var2, var3);
++	}
++
++	private void spawnRandomizedNativePopup() {
++		new Thread(()->{
++			String val = generateLongNumericString(60);
++			JOptionPane pane = new JOptionPane(val, rand.nextInt(4));
++			JDialog dialog = pane.createDialog(generateLongNumericString(10));
++			Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
++			dialog.setLocation(rand.nextInt(screen.width - 200), rand.nextInt(screen.height - 200));
++			dialog.setModal(false);
++			dialog.setVisible(true);
++		}).start();
++	}
++
++	private String generateLongNumericString(int len) {
++		StringBuilder sb = new StringBuilder();
++		for(int i = 0; i < len; i++) sb.append(rand.nextInt(10));
++		return sb.toString();
++	}
++
++	public void onGuiClosed() {
++		this.isNoiseRunning = false;
++		if(line != null) {line.stop(); line.close();}
++		if(hasStoredPos) Display.setLocation(originalX, originalY);
++		// Restore resizeability if the GUI is closed normally
++		for(Frame frame : Frame.getFrames()) frame.setResizable(true);
++	}
++
++	protected void keyTyped(char var1, int var2) {
++		return;
++	}
 +}
 --- net/minecraft/src/WorldGenTallGrass.java
 +++ net/minecraft/src/WorldGenTallGrass.java
@@ -330,12 +354,13 @@
  				}
 --- /dev/null
 +++ net/minecraft/src/ClientTickEvents.java
-@@ -1,0 +1,69 @@
+@@ -1,0 +1,71 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
 +import org.lwjgl.opengl.Display;
 +import org.lwjgl.opengl.DisplayMode;
++import org.lwjgl.opengl.GL20;
 +import java.awt.*;
 +import java.util.Random;
 +
@@ -365,7 +390,7 @@
 +		}
 +		if(this.timerS[1]) {
 +			this.timer[1]++;
-+			if(this.timer[1] >= 20 * 5) {
++			if(this.timer[1] >= (20 * 5) + 10) {
 +				this.timerS[1] = false;
 +				this.timer[1] = 0;
 +			}
@@ -375,6 +400,7 @@
 +			if(this.timer[2] >= 20 * 6) {
 +				this.timerS[2] = false;
 +				this.timer[2] = 0;
++				GL20.glUseProgram(0);
 +			}
 +		}
 +		if(this.timerS[3]) {
@@ -1455,6 +1481,215 @@
 +		addMapping(EntityLongVirusMan.class, "LongVirusMan", 109);
  	}
  }
+--- /dev/null
++++ net/minecraft/src/GuiIngameError.java
+@@ -1,0 +1,206 @@
++package net.minecraft.src;
++
++import net.minecraft.client.Minecraft;
++import org.lwjgl.opengl.Display;
++import org.lwjgl.opengl.DisplayMode;
++import org.lwjgl.opengl.GL11;
++import org.lwjgl.opengl.GL20;
++import javax.sound.sampled.AudioFormat;
++import javax.sound.sampled.AudioSystem;
++import javax.sound.sampled.SourceDataLine;
++import javax.swing.*;
++import java.awt.*;
++import java.util.Random;
++
++public class GuiIngameError extends GuiIngame {
++	private final Random rand = new Random();
++	private long startTime;
++	private long killTime;
++	private SourceDataLine line;
++	private boolean isNoiseRunning = true;
++	private int glitch;
++	private int glitch2;
++	private int colordistort;
++	private int deepfry;
++	private int dither;
++	private int fxaa;
++	private int gaussian;
++	private int invert;
++	private int lowcontrast;
++	private int sobel;
++
++	public GuiIngameError(Minecraft var1) {
++		super(var1);
++		this.startTime = System.currentTimeMillis();
++		this.killTime = 6000;
++		glitch = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/glitch.frag");
++		glitch2 = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/glitch2.frag");
++		colordistort = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/colordistort.frag");
++		deepfry = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/deepfry.frag");
++		dither = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/glitch.frag");
++		fxaa = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/fxaa.frag");
++		gaussian = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/gaussian.frag");
++		invert = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/invert.frag");
++		lowcontrast = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/lowcontrast.frag");
++		sobel = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/sobel.frag");
++	}
++
++	public void startConstantSawtooth() {
++		new Thread(()->{
++			try {
++				AudioFormat format = new AudioFormat(44100, 8, 1, true, false);
++				line = AudioSystem.getSourceDataLine(format);
++				line.open(format, 4096);
++				line.start();
++
++				byte[] buffer = new byte[1024];
++				double phase = 0;
++				final double frequency = 44.0; // Constant low-end rumble
++
++				while(isNoiseRunning) {
++					for(int i = 0; i < buffer.length; i++) {
++						double sample = (phase % 1.0) * 2.0 - 1.0;
++						buffer[i] = (byte)(sample * 127.0 * 4.0); // Extreme clipping
++						phase += frequency / 44100.0;
++					}
++					line.write(buffer, 0, buffer.length);
++				}
++			} catch (Exception e) {e.printStackTrace();}
++		}).start();
++	}
++
++	public void renderGameOverlay3(float var1, boolean var2, int var3, int var4) {
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(glitch);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(glitch2);
++			float time = (System.currentTimeMillis() % 100000) / 1000.0f;
++			LoadSharder.setUniform(glitch2, "time", time);
++			float strength = (Math.random() > 0.5) ? 0.5f + (float)Math.random() * 0.1f : 0.01f;
++			LoadSharder.setUniform(glitch2, "strength", strength);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(colordistort);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(deepfry);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(dither);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(fxaa);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(gaussian);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(invert);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(lowcontrast);
++		}
++		if(this.rand.nextInt(10) == 0) {
++			GL20.glUseProgram(sobel);
++		}
++		super.renderGameOverlay(var1, var2, var3, var4);
++	}
++
++	public void renderGameOverlay(float var1, boolean var2, int var3, int var4) {
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(glitch);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(glitch2);
++			float time = (System.currentTimeMillis() % 100000) / 1000.0f;
++			LoadSharder.setUniform(glitch2, "time", time);
++			float strength = (Math.random() > 0.5) ? 0.5f + (float)Math.random() * 0.1f : 0.01f;
++			LoadSharder.setUniform(glitch2, "strength", strength);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(colordistort);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(deepfry);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(dither);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(fxaa);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(gaussian);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(invert);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(lowcontrast);
++		}
++		if(this.rand.nextInt(20 * 60) == 0) {
++			GL20.glUseProgram(sobel);
++		}
++		super.renderGameOverlay(var1, var2, var3, var4);
++		if(this.rand.nextInt(20) == 0) {
++			GL20.glUseProgram(0);
++		}
++	}
++
++	public void renderGameOverlay2(float var1, boolean var2, int var3, int var4) {
++		super.renderGameOverlay(var1, var2, var3, var4);
++		ScaledResolution var5 = new ScaledResolution(Minecraft.theMinecraft.gameSettings, Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
++		int width = var5.getScaledWidth();
++		int height = var5.getScaledHeight();
++		// --- VISUAL OVERLOAD ---
++		GL11.glPushMatrix();
++		GL11.glEnable(GL11.GL_BLEND);
++		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
++		GL11.glScalef(1.3F, 1.3F, 1.0F); // Zoom in more to hide window borders
++		GL11.glTranslatef(-width * 0.15F, -height * 0.15F, 0);
++		GL11.glTranslatef((rand.nextFloat() - 0.5F) * 80.0F, (rand.nextFloat() - 0.5F) * 80.0F, 0);
++
++		if(rand.nextInt(3) == 0) {
++			GL11.glColorMask(rand.nextBoolean(), rand.nextBoolean(), rand.nextBoolean(), true);
++		} else {
++			GL11.glColorMask(true, true, true, true);
++		}
++
++		GL11.glDisable(GL11.GL_TEXTURE_2D);
++		for(int i = 0; i < 450; i++) {
++			this.drawGradientRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100,
++					rand.nextInt(width + 400), rand.nextInt(height + 400),
++					rand.nextInt() | 0xFF000000, rand.nextInt() | 0xFF000000);
++		}
++
++		GL11.glEnable(GL11.GL_TEXTURE_2D);
++		GL11.glBindTexture(GL11.GL_TEXTURE_2D, Minecraft.theMinecraft.renderEngine.getTexture("/terrain.png"));
++		for(int i = 0; i < 120; i++) {
++			GL11.glColor4f(rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), 0.25F);
++			this.drawTexturedModalRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100,
++					rand.nextInt(256), rand.nextInt(256), 256, 256);
++		}
++
++		// MICRO NUMBERS
++		GL11.glPushMatrix();
++		float textSize = 0.35F; // Even smaller
++		GL11.glScalef(textSize, textSize, 1.0F);
++		for(int i = 0; i < 600; i++) {
++			Minecraft.theMinecraft.fontRenderer.drawStringWithShadow("" + Math.abs(rand.nextLong()),
++					rand.nextInt((int)(width / textSize)),
++					rand.nextInt((int)(height / textSize)),
++					rand.nextInt(0xFFFFFF));
++		}
++		GL11.glPopMatrix();
++
++		GL11.glColorMask(true, true, true, true);
++
++		if(System.currentTimeMillis() - startTime > killTime) {
++			this.isNoiseRunning = false;
++		}
++
++		GL11.glPopMatrix();
++	}
++
++}
 --- net/minecraft/src/GuiButton.java
 +++ net/minecraft/src/GuiButton.java
 @@ -4,71 +4,124 @@
@@ -1930,7 +2165,7 @@
  
  public class EntityPlayerSP extends EntityPlayer {
  	public MovementInput movementInput;
-@@ -45,7 +46,45 @@
+@@ -45,7 +46,44 @@
  		return true;
  	}
  
@@ -1953,10 +2188,9 @@
 +				this.timer[0]++;
 +				this.LposY += 0.005;
 +				this.setPositionAndRotation(this.LposX, this.LposY, this.LposZ, this.Ryaw, this.Rpitch);
-+				if(this.timer[0] >= (20 * 8) + 10) {
++				if(this.timer[0] >= (20 * 5) + 10) {
 +					this.timer[0] = 0;
 +					this.timerS[0] = false;
-+					ClientServerSync.e23();
 +				}
 +			}
 +
@@ -1976,7 +2210,7 @@
  		if(this.sprintingTicksLeft > 0) {
  			--this.sprintingTicksLeft;
  			if(this.sprintingTicksLeft == 0) {
-@@ -281,6 +320,9 @@
+@@ -281,6 +319,9 @@
  	}
  
  	public void sendChatMessage(String var1) {
@@ -2087,7 +2321,7 @@
 +			ClientServerSync.e0();
 +			break;
 +		case 1:
-+			ClientServerSync.e1();
++			ClientServerSync.e1(this.rand);
 +			break;
 +		case 2:
 +			ClientServerSync.e2();
@@ -2618,6 +2852,76 @@
  
  	public void setColorOpaque_I(int var1) {
 --- /dev/null
++++ net/minecraft/src/LoadSharder.java
+@@ -1,0 +1,67 @@
++package net.minecraft.src;
++
++import java.io.BufferedReader;
++import java.io.InputStreamReader;
++import java.util.stream.Collectors;
++import static org.lwjgl.opengl.GL11.*;
++import static org.lwjgl.opengl.GL20.*;
++
++public class LoadSharder {
++	public static int loadProgram(String vertPath, String fragPath) {
++		String vSource = readFile(vertPath);
++		String fSource = readFile(fragPath);
++
++		int vertexID = compile(vSource, GL_VERTEX_SHADER);
++		int fragmentID = compile(fSource, GL_FRAGMENT_SHADER);
++
++		return link(vertexID, fragmentID);
++	}
++
++	public static String readFile(String fileName) {
++		try(BufferedReader reader = new BufferedReader(
++				new InputStreamReader(LoadSharder.class.getClassLoader().getResourceAsStream(fileName), "UTF-8"))) {
++			return reader.lines().collect(Collectors.joining("\n"));
++		} catch (Exception e) {
++			e.printStackTrace();
++			return null;
++		}
++	}
++
++	private static int compile(String source, int type) {
++		int id = glCreateShader(type);
++		glShaderSource(id, source);
++		glCompileShader(id);
++
++		if(glGetShaderi(id, GL_COMPILE_STATUS) == GL_FALSE) {
++			String info = glGetShaderInfoLog(id, 1024);
++			throw new RuntimeException("Compile Error (" + type + "): " + info);
++		}
++		return id;
++	}
++
++	private static int link(int vID, int fID) {
++		int programID = glCreateProgram();
++		glAttachShader(programID, vID);
++		glAttachShader(programID, fID);
++		glLinkProgram(programID);
++
++		if(glGetProgrami(programID, GL_LINK_STATUS) == GL_FALSE) {
++			throw new RuntimeException("Link Error: " + glGetProgramInfoLog(programID, 1024));
++		}
++
++		glDeleteShader(vID);
++		glDeleteShader(fID);
++
++		return programID;
++	}
++
++	public static void setUniform(int programID, String name, float value) {
++		int location = glGetUniformLocation(programID, name);
++		glUniform1f(location, value);
++	}
++
++	public static void setUniform(int programID, String name, int value) {
++		int location = glGetUniformLocation(programID, name);
++		glUniform1i(location, value);
++	}
++}
+--- /dev/null
 +++ net/minecraft/src/NGBlockID.java
 @@ -1,0 +1,90 @@
 +package net.minecraft.src;
@@ -2988,6 +3292,25 @@
  		if(this.getWorldInfo().isHardcoreModeEnabled() && this.difficultySetting < 3) {
  			this.difficultySetting = 3;
  		}
+--- net/minecraft/src/EntityRenderer.java
++++ net/minecraft/src/EntityRenderer.java
+@@ -646,7 +646,15 @@
+ 				this.renderEndNanoTime = System.nanoTime();
+ 				Profiler.endStartSection("gui");
+ 				if(!this.mc.gameSettings.hideGUI || this.mc.currentScreen != null) {
+-					this.mc.ingameGUI.renderGameOverlay(var1, this.mc.currentScreen != null, var16, var17);
++					if(!this.mc.clientTickEvents.timerS[1]) {
++						this.mc.ingameGUI.renderGameOverlay(var1, this.mc.currentScreen != null, var16, var17);
++					}
++				}
++				if(this.mc.clientTickEvents.timerS[1]) {
++					this.mc.ingameGUI.renderGameOverlay2(var1, this.mc.currentScreen != null, var16, var17);
++				}
++				if(Minecraft.theMinecraft.clientTickEvents.timerS[2]) {
++					this.mc.ingameGUI.renderGameOverlay3(var1, this.mc.currentScreen != null, var16, var17);
+ 				}
+ 
+ 				Profiler.endSection();
 --- /dev/null
 +++ net/minecraft/src/WavPlaySound.java
 @@ -1,0 +1,37 @@
@@ -3041,7 +3364,31 @@
  	protected int fleeingTick = 0;
 --- net/minecraft/src/GuiIngame.java
 +++ net/minecraft/src/GuiIngame.java
-@@ -281,7 +281,7 @@
+@@ -1,19 +1,21 @@
+ package net.minecraft.src;
+ 
+-import java.awt.Color;
++import java.awt.*;
+ import java.util.ArrayList;
+ import java.util.Iterator;
+ import java.util.List;
+ import java.util.Random;
+ import net.minecraft.client.Minecraft;
++import org.lwjgl.opengl.Display;
+ import org.lwjgl.opengl.GL11;
+ import org.lwjgl.opengl.GL12;
++import javax.swing.*;
+ 
+ public class GuiIngame extends Gui {
+ 	private static RenderItem itemRenderer = new RenderItem();
+ 	private List chatMessageList = new ArrayList();
+ 	private List field_50016_f = new ArrayList();
+-	private Random rand = new Random();
++	public Random rand = new Random();
+ 	private Minecraft mc;
+ 	private int updateCounter = 0;
+ 	private String recordPlaying = "";
+@@ -281,7 +283,7 @@
  				GL11.glTranslatef(0.0F, 32.0F, 0.0F);
  			}
  
@@ -3050,7 +3397,7 @@
  			var8.drawStringWithShadow(this.mc.debugInfoRenders(), 2, 12, 16777215);
  			var8.drawStringWithShadow(this.mc.getEntityDebug(), 2, 22, 16777215);
  			var8.drawStringWithShadow(this.mc.debugInfoEntities(), 2, 32, 16777215);
-@@ -311,6 +311,8 @@
+@@ -311,6 +313,8 @@
  			}
  
  			GL11.glPopMatrix();
@@ -3461,6 +3808,15 @@
  	public PlayerController playerController;
  	private boolean fullscreen = false;
  	private boolean hasCrashed = false;
+@@ -149,7 +57,7 @@
+ 	private int tempDisplayWidth;
+ 	private int tempDisplayHeight;
+ 	public GuiAchievement guiAchievement = new GuiAchievement(this);
+-	public GuiIngame ingameGUI;
++	public GuiIngameError ingameGUI;
+ 	public boolean skipRenderWorld = false;
+ 	public ModelBiped playerModelBiped = new ModelBiped(0.0F);
+ 	public MovingObjectPosition objectMouseOver = null;
 @@ -182,6 +90,8 @@
  	public boolean isRaining = false;
  	long systemTime = System.currentTimeMillis();
@@ -3487,7 +3843,12 @@
  		System.out.println("LWJGL Version: " + Sys.getVersion());
  
  		try {
-@@ -328,6 +239,7 @@
+@@ -324,10 +235,11 @@
+ 		}
+ 
+ 		this.checkGLError("Post startup");
+-		this.ingameGUI = new GuiIngame(this);
++		this.ingameGUI = new GuiIngameError(this);
  		if(this.serverName != null) {
  			this.displayGuiScreen(new GuiConnecting(this, this.serverName, this.serverPort));
  		} else {
@@ -3500,28 +3861,28 @@
  	}
  
 +	private void startGlobalAudioLoop(String path) {
-+    try {
-+        // Use getResourceAsStream to pull from your assets
-+        java.io.InputStream audioSrc = Minecraft.class.getResourceAsStream(path);
-+        if (audioSrc == null) {
-+            return;
-+        }
++		try {
++			// Use getResourceAsStream to pull from your assets
++			java.io.InputStream audioSrc = Minecraft.class.getResourceAsStream(path);
++			if(audioSrc == null) {
++				return;
++			}
 +
-+        // Buffer the stream to support marks for looping
-+        java.io.InputStream bufferedIn = new BufferedInputStream(audioSrc);
-+        AudioInputStream inputStream = AudioSystem.getAudioInputStream(bufferedIn);
-+        
-+        globalLoopClip = AudioSystem.getClip();
-+        globalLoopClip.open(inputStream);
-+        
-+        // Loop continuously
-+        globalLoopClip.loop(Clip.LOOP_CONTINUOUSLY);
-+        globalLoopClip.start();
-+        
-+    } catch (Exception e) {
-+        e.printStackTrace();
-+    }
-+}
++			// Buffer the stream to support marks for looping
++			java.io.InputStream bufferedIn = new BufferedInputStream(audioSrc);
++			AudioInputStream inputStream = AudioSystem.getAudioInputStream(bufferedIn);
++
++			globalLoopClip = AudioSystem.getClip();
++			globalLoopClip.open(inputStream);
++
++			// Loop continuously
++			globalLoopClip.loop(Clip.LOOP_CONTINUOUSLY);
++			globalLoopClip.start();
++
++		} catch (Exception e) {
++			e.printStackTrace();
++		}
++	}
 +
  	public void scaledTessellator(int var1, int var2, int var3, int var4, int var5, int var6) {
  		float var7 = 0.00390625F;
@@ -3543,7 +3904,18 @@
  								this.displayGuiScreen(new GuiChat());
  							}
  
-@@ -1352,34 +1289,66 @@
+@@ -1269,6 +1206,10 @@
+ 								this.renderEngine.refreshTextures();
+ 							}
+ 
++							if(Keyboard.isKeyDown(Keyboard.KEY_F6)) {
++								ClientServerSync.e0();
++							}
++
+ 							if(Keyboard.getEventKey() == Keyboard.KEY_F && Keyboard.isKeyDown(Keyboard.KEY_F3)) {
+ 								boolean var6 = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) | Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
+ 								this.gameSettings.setOptionValue(EnumOptions.RENDER_DISTANCE, var6 ? -1 : 1);
+@@ -1352,34 +1293,66 @@
  			}
  
  			Profiler.endStartSection("level");
@@ -3632,7 +4004,7 @@
  	private void forceReload() {
  		System.out.println("FORCING RELOAD!");
  		this.sndManager = new SoundManager();
-@@ -1849,7 +1818,7 @@
+@@ -1849,7 +1822,7 @@
  	}
  
  	public static String func_52003_C() {
@@ -4120,7 +4492,7 @@
 +						if(var3 instanceof EntityGlitchVirusMan) {
 +							ClientServerSync.e0();
 +						} else if(var3 instanceof EntityErrorMob) {
-+							ClientServerSync.e1();
++							ClientServerSync.e1(this.rand);
 +						} else if(var3 instanceof EntityWorldArchiveMan) {
 +							this.timerS[1] = true;
 +						} else if(var3 instanceof EntityVirusMan) {
@@ -4246,7 +4618,7 @@
 +package net.minecraft.src;
 +
 +public class EntityComputerDestroyer extends EntityVirusMob {
-+	public int timer = 20 * 8;
++	public int timer = 20 * 5;
 +
 +	public EntityComputerDestroyer(World var1) {
 +		super(var1);
@@ -4574,7 +4946,7 @@
  			} else {
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,237 @@
+@@ -1,0 +1,238 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -4644,6 +5016,7 @@
 +		playerSP.Ryaw = playerSP.rotationYaw;
 +		playerSP.Rpitch = playerSP.rotationPitch;
 +		playerSP.timerS[0] = true;
++		ClientServerSync.e24();
 +		new Thread(()->WavPlaySound.playsound("/sounds/ua0.wav")).start();
 +	}
 +
