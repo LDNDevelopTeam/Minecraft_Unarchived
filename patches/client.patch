@@ -545,10 +545,10 @@
 +    GL11.glDisable(GL11.GL_ALPHA_TEST);
 +    GL11.glDisable(GL11.GL_CULL_FACE);
 +    GL11.glDepthMask(false);
-+    
++
 +    // Timer Logic: Check if we should start a glitch
 +    if (glitchDuration <= 0) {
-+        if (new java.util.Random().nextInt(150) == 0) { 
++        if (new java.util.Random().nextInt(150) == 0) {
 +            glitchDuration = 10 + new java.util.Random().nextInt(15); // Lasts ~0.5 seconds
 +            currentTwitchYaw = (new java.util.Random().nextFloat() - 0.5F) * 3.0F;
 +            currentTwitchPitch = (new java.util.Random().nextFloat() - 0.5F) * 3.0F;
@@ -578,7 +578,7 @@
 +            float var7 = ((float) (var6 % var5) / (float) var5 - 0.5F) / 64.0F;
 +            float var8 = ((float) (var6 / var5) / (float) var5 - 0.5F) / 64.0F;
 +            GL11.glTranslatef(var7, var8, 0.0F);
-+            
++
 +            float rotPitch = MathHelper.sin(((float) this.panoramaTimer + var3) / 400.0F) * 25.0F + 20.0F;
 +            float rotYaw = -((float) this.panoramaTimer + var3) * 0.1F;
 +
@@ -615,7 +615,7 @@
 +
 +	// --- RANDOM SQUARES OVERLAY START ---
 +    java.util.Random squareRand = new java.util.Random();
-+    
++
 +    // Switch to Orthographic projection to draw 2D squares over the 3D scene
 +    GL11.glMatrixMode(GL11.GL_PROJECTION);
 +    GL11.glPushMatrix();
@@ -636,7 +636,7 @@
 +        float size = 1.0F + squareRand.nextFloat() * 4.0F; // Size between 1 and 5
 +        float posX = squareRand.nextFloat() * 100.0F;
 +        float posY = squareRand.nextFloat() * 100.0F;
-+        
++
 +        // Randomly pick between white, black, or red for that "glitch" feel
 +        int colorType = squareRand.nextInt(3);
 +        if (colorType == 0) GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.2F); // White
@@ -1483,7 +1483,7 @@
  }
 --- /dev/null
 +++ net/minecraft/src/GuiIngameError.java
-@@ -1,0 +1,206 @@
+@@ -1,0 +1,166 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -1505,30 +1505,22 @@
 +	private SourceDataLine line;
 +	private boolean isNoiseRunning = true;
 +	private int glitch;
-+	private int glitch2;
-+	private int colordistort;
-+	private int deepfry;
-+	private int dither;
 +	private int fxaa;
 +	private int gaussian;
 +	private int invert;
 +	private int lowcontrast;
-+	private int sobel;
++	private GlitchRenderer glitchRenderer;
++	private boolean glitchInited = false;
 +
 +	public GuiIngameError(Minecraft var1) {
 +		super(var1);
 +		this.startTime = System.currentTimeMillis();
 +		this.killTime = 6000;
 +		glitch = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/glitch.frag");
-+		glitch2 = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/glitch2.frag");
-+		colordistort = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/colordistort.frag");
-+		deepfry = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/deepfry.frag");
-+		dither = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/glitch.frag");
 +		fxaa = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/fxaa.frag");
 +		gaussian = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/gaussian.frag");
 +		invert = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/invert.frag");
 +		lowcontrast = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/lowcontrast.frag");
-+		sobel = LoadSharder.loadProgram("shaders/vert/screen.vert", "shaders/frag/sobel.frag");
 +	}
 +
 +	public void startConstantSawtooth() {
@@ -1556,65 +1548,24 @@
 +	}
 +
 +	public void renderGameOverlay3(float var1, boolean var2, int var3, int var4) {
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(glitch);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(glitch2);
-+			float time = (System.currentTimeMillis() % 100000) / 1000.0f;
-+			LoadSharder.setUniform(glitch2, "time", time);
-+			float strength = (Math.random() > 0.5) ? 0.5f + (float)Math.random() * 0.1f : 0.01f;
-+			LoadSharder.setUniform(glitch2, "strength", strength);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(colordistort);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(deepfry);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(dither);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(fxaa);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(gaussian);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(invert);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(lowcontrast);
-+		}
-+		if(this.rand.nextInt(10) == 0) {
-+			GL20.glUseProgram(sobel);
++		if(!glitchInited) {
++			glitchRenderer = new GlitchRenderer();
++			glitchRenderer.init(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
++			glitchInited = true;
 +		}
 +		super.renderGameOverlay(var1, var2, var3, var4);
++		glitchRenderer.render(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
++		glitchRenderer.enable();
 +	}
 +
 +	public void renderGameOverlay(float var1, boolean var2, int var3, int var4) {
++		if(!glitchInited) {
++			glitchRenderer = new GlitchRenderer();
++			glitchRenderer.init(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
++			glitchInited = true;
++		}
 +		if(this.rand.nextInt(20 * 60) == 0) {
 +			GL20.glUseProgram(glitch);
-+		}
-+		if(this.rand.nextInt(20 * 60) == 0) {
-+			GL20.glUseProgram(glitch2);
-+			float time = (System.currentTimeMillis() % 100000) / 1000.0f;
-+			LoadSharder.setUniform(glitch2, "time", time);
-+			float strength = (Math.random() > 0.5) ? 0.5f + (float)Math.random() * 0.1f : 0.01f;
-+			LoadSharder.setUniform(glitch2, "strength", strength);
-+		}
-+		if(this.rand.nextInt(20 * 60) == 0) {
-+			GL20.glUseProgram(colordistort);
-+		}
-+		if(this.rand.nextInt(20 * 60) == 0) {
-+			GL20.glUseProgram(deepfry);
-+		}
-+		if(this.rand.nextInt(20 * 60) == 0) {
-+			GL20.glUseProgram(dither);
-+		}
-+		if(this.rand.nextInt(20 * 60) == 0) {
-+			GL20.glUseProgram(fxaa);
 +		}
 +		if(this.rand.nextInt(20 * 60) == 0) {
 +			GL20.glUseProgram(gaussian);
@@ -1625,16 +1576,23 @@
 +		if(this.rand.nextInt(20 * 60) == 0) {
 +			GL20.glUseProgram(lowcontrast);
 +		}
-+		if(this.rand.nextInt(20 * 60) == 0) {
-+			GL20.glUseProgram(sobel);
-+		}
 +		super.renderGameOverlay(var1, var2, var3, var4);
-+		if(this.rand.nextInt(20) == 0) {
++		glitchRenderer.render(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
++		if(this.rand.nextInt(20 * 15) == 0) {
++			glitchRenderer.enable();
++		}
++		if(this.rand.nextInt(20 * 3) == 0) {
++			glitchRenderer.disable();
 +			GL20.glUseProgram(0);
 +		}
 +	}
 +
 +	public void renderGameOverlay2(float var1, boolean var2, int var3, int var4) {
++		if(!glitchInited) {
++			glitchRenderer = new GlitchRenderer();
++			glitchRenderer.init(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
++			glitchInited = true;
++		}
 +		super.renderGameOverlay(var1, var2, var3, var4);
 +		ScaledResolution var5 = new ScaledResolution(Minecraft.theMinecraft.gameSettings, Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
 +		int width = var5.getScaledWidth();
@@ -1687,6 +1645,8 @@
 +		}
 +
 +		GL11.glPopMatrix();
++		glitchRenderer.render(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
++		glitchRenderer.enable();
 +	}
 +
 +}
@@ -2632,15 +2592,99 @@
 +}
 --- net/minecraft/src/GuiScreen.java
 +++ net/minecraft/src/GuiScreen.java
-@@ -155,20 +155,54 @@
+@@ -7,10 +7,12 @@
+ import java.awt.datatransfer.Transferable;
+ import java.util.ArrayList;
+ import java.util.List;
++import java.util.Random;
+ import net.minecraft.client.Minecraft;
+ import org.lwjgl.input.Keyboard;
+ import org.lwjgl.input.Mouse;
+ import org.lwjgl.opengl.GL11;
++import org.lwjgl.opengl.GL20;
+ 
+ public class GuiScreen extends Gui {
+ 	protected Minecraft mc;
+@@ -21,13 +23,28 @@
+ 	protected FontRenderer fontRenderer;
+ 	public GuiParticle guiParticles;
+ 	private GuiButton selectedButton = null;
++	private GlitchRenderer glitchRenderer;
++	private boolean glitchInited = false;
++	public Random rand = new Random();
+ 
+ 	public void drawScreen(int var1, int var2, float var3) {
++		if(!glitchInited) {
++			glitchRenderer = new GlitchRenderer();
++			glitchRenderer.init(mc.displayWidth, mc.displayHeight);
++			glitchInited = true;
++		}
+ 		for(int var4 = 0; var4 < this.controlList.size(); ++var4) {
+ 			GuiButton var5 = (GuiButton)this.controlList.get(var4);
+ 			var5.drawButton(this.mc, var1, var2);
+ 		}
+-
++		glitchRenderer.render(mc.displayWidth, mc.displayHeight);
++		if(this.rand.nextInt(20 * 10) == 0) {
++			glitchRenderer.enable();
++		}
++		if(this.rand.nextInt(20 * 3) == 0) {
++			glitchRenderer.disable();
++			GL20.glUseProgram(0);
++		}
  	}
  
+ 	protected void keyTyped(char var1, int var2) {
+@@ -157,17 +174,51 @@
  	public void drawBackground(int var1) {
--		GL11.glDisable(GL11.GL_LIGHTING);
--		GL11.glDisable(GL11.GL_FOG);
--		Tessellator var2 = Tessellator.instance;
+ 		GL11.glDisable(GL11.GL_LIGHTING);
+ 		GL11.glDisable(GL11.GL_FOG);
++
+ 		Tessellator var2 = Tessellator.instance;
 -		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/gui/background.png"));
--		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++		java.util.Random rand = new java.util.Random();
++
++		// 1. Transparent Background (No Black Rect)
++		// We skip the drawRect(0, 0, width, height, 0xFF000000) call.
++		// This allows the previous frame or the world to "bleed" through.
++
++		// 2. Render Noisy Garble
++		for(int i = 0; i < 400; ++i) {
++			// 3. Clipping: Allow squares to start outside the screen (negative values)
++			// We subtract 50 to allow them to clip off the left/top edges.
++			int x = rand.nextInt(this.width + 100) - 50;
++			int y = rand.nextInt(this.height + 100) - 50;
++
++			// Randomly sized strips
++			int w = rand.nextInt(60) + 5;
++			int h = rand.nextInt(10) + 2;
++
++			// 4. Random Colors & Noisy Textures
++			// We toggle texture state randomly to create "noise" vs "solid" blocks
++			if(rand.nextBoolean()) {
++				GL11.glEnable(GL11.GL_TEXTURE_2D);
++				// Binding a random texture (like terrain or particles) creates noisy data
++				GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
++			} else {
++				GL11.glDisable(GL11.GL_TEXTURE_2D);
++			}
++
++			// Generate high-intensity random colors
++			int r = rand.nextInt(256);
++			int g = rand.nextInt(256);
++			int b = rand.nextInt(256);
++			int alpha = rand.nextInt(200) + 55; // Keep them mostly visible
++
++			int finalColor = (alpha << 24) | (r << 16) | (g << 8) | b;
++
++			// Draw the quad using the standard Gui method
++			// Using drawGradientRect with the same color creates a solid block
++			this.drawGradientRect(x, y, x + w, y + h, finalColor, finalColor);
++		}
++
++		// Ensure Texture state is reset for the buttons/text
++		GL11.glEnable(GL11.GL_TEXTURE_2D);
+ 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 -		float var3 = 32.0F;
 -		var2.startDrawingQuads();
 -		var2.setColorOpaque_I(4210752);
@@ -2649,58 +2693,9 @@
 -		var2.addVertexWithUV((double)this.width, 0.0D, 0.0D, (double)((float)this.width / var3), (double)var1);
 -		var2.addVertexWithUV(0.0D, 0.0D, 0.0D, 0.0D, (double)var1);
 -		var2.draw();
--	}
-+    GL11.glDisable(GL11.GL_LIGHTING);
-+    GL11.glDisable(GL11.GL_FOG);
-+    
-+    Tessellator var2 = Tessellator.instance;
-+    java.util.Random rand = new java.util.Random();
-+
-+    // 1. Transparent Background (No Black Rect)
-+    // We skip the drawRect(0, 0, width, height, 0xFF000000) call.
-+    // This allows the previous frame or the world to "bleed" through.
-+
-+    // 2. Render Noisy Garble
-+    for (int i = 0; i < 400; ++i) {
-+        // 3. Clipping: Allow squares to start outside the screen (negative values)
-+        // We subtract 50 to allow them to clip off the left/top edges.
-+        int x = rand.nextInt(this.width + 100) - 50;
-+        int y = rand.nextInt(this.height + 100) - 50;
-+        
-+        // Randomly sized strips
-+        int w = rand.nextInt(60) + 5;
-+        int h = rand.nextInt(10) + 2;
-+
-+        // 4. Random Colors & Noisy Textures
-+        // We toggle texture state randomly to create "noise" vs "solid" blocks
-+        if (rand.nextBoolean()) {
-+            GL11.glEnable(GL11.GL_TEXTURE_2D);
-+            // Binding a random texture (like terrain or particles) creates noisy data
-+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
-+        } else {
-+            GL11.glDisable(GL11.GL_TEXTURE_2D);
-+        }
-+
-+        // Generate high-intensity random colors
-+        int r = rand.nextInt(256);
-+        int g = rand.nextInt(256);
-+        int b = rand.nextInt(256);
-+        int alpha = rand.nextInt(200) + 55; // Keep them mostly visible
-+        
-+        int finalColor = (alpha << 24) | (r << 16) | (g << 8) | b;
-+
-+        // Draw the quad using the standard Gui method
-+        // Using drawGradientRect with the same color creates a solid block
-+        this.drawGradientRect(x, y, x + w, y + h, finalColor, finalColor);
-+    }
-+
-+    // Ensure Texture state is reset for the buttons/text
-+    GL11.glEnable(GL11.GL_TEXTURE_2D);
-+    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
-+}
+ 	}
  
  	public boolean doesGuiPauseGame() {
- 		return true;
 --- /dev/null
 +++ net/minecraft/src/RenderLongVirusMan.java
 @@ -1,0 +1,7 @@
@@ -3551,6 +3546,127 @@
  						var1.setBlock(var7, var8 + var11, var9, Block.cactus.blockID);
  					}
  				}
+--- /dev/null
++++ net/minecraft/src/GlitchRenderer.java
+@@ -1,0 +1,118 @@
++package net.minecraft.src;
++
++import org.lwjgl.BufferUtils;
++import java.nio.FloatBuffer;
++import static org.lwjgl.opengl.GL11.*;
++import static org.lwjgl.opengl.GL12.*;
++import static org.lwjgl.opengl.GL13.*;
++import static org.lwjgl.opengl.GL15.*;
++import static org.lwjgl.opengl.GL20.*;
++
++public class GlitchRenderer {
++
++	private int programID;
++	private int vboID;
++	private int copyTexID;
++	private int texWidth, texHeight;
++
++	public float intensity = 0.5f;
++	public float scanline = 6.0f;
++	public float rgb = 0.012f;
++	public float block = 0.3f;
++
++	private long startTime;
++
++	public boolean enabled = false;
++
++	public void enable()  { enabled = true; }
++	public void disable() { enabled = false; }
++
++	private static final float[] QUAD = {
++			-1f, -1f,
++			1f, -1f,
++			-1f, 1f,
++			1f, 1f
++	};
++
++	public void init(int screenWidth, int screenHeight) {
++		programID = LoadSharder.loadProgram("shaders/vert/glitch.vert", "shaders/frag/glitch2.frag");
++
++		texWidth = screenWidth;
++		texHeight = screenHeight;
++
++		copyTexID = glGenTextures();
++		glBindTexture(GL_TEXTURE_2D, copyTexID);
++		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
++		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
++		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
++		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
++		glBindTexture(GL_TEXTURE_2D, 0);
++
++		vboID = glGenBuffers();
++		glBindBuffer(GL_ARRAY_BUFFER, vboID);
++		FloatBuffer buf = BufferUtils.createFloatBuffer(QUAD.length);
++		buf.put(QUAD).flip();
++		glBufferData(GL_ARRAY_BUFFER, buf, GL_STATIC_DRAW);
++		glBindBuffer(GL_ARRAY_BUFFER, 0);
++
++		startTime = System.currentTimeMillis();
++	}
++
++	public void render(int screenWidth, int screenHeight) {
++		if (!enabled) return;
++		float time = (System.currentTimeMillis() - startTime) / 1000.0f;
++
++		glBindTexture(GL_TEXTURE_2D, copyTexID);
++		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
++				0, 0, screenWidth, screenHeight, 0);
++
++		glPushMatrix();
++		glMatrixMode(GL_PROJECTION);
++		glPushMatrix();
++		glLoadIdentity();
++		glMatrixMode(GL_MODELVIEW);
++		glLoadIdentity();
++
++		glDisable(GL_DEPTH_TEST);
++		glDisable(GL_ALPHA_TEST);
++		glDisable(GL_BLEND);
++
++		glUseProgram(programID);
++
++		LoadSharder.setUniform(programID, "u_time", time);
++		LoadSharder.setUniform(programID, "u_intensity", intensity);
++		LoadSharder.setUniform(programID, "u_scanline", scanline);
++		LoadSharder.setUniform(programID, "u_rgb", rgb);
++		LoadSharder.setUniform(programID, "u_block", block);
++		LoadSharder.setUniform(programID, "u_texture", 0);
++
++		glActiveTexture(GL_TEXTURE0);
++		glBindTexture(GL_TEXTURE_2D, copyTexID);
++
++		glBindBuffer(GL_ARRAY_BUFFER, vboID);
++		int aPos = glGetAttribLocation(programID, "a_pos");
++		glEnableVertexAttribArray(aPos);
++		glVertexAttribPointer(aPos, 2, GL_FLOAT, false, 0, 0L);
++
++		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
++
++		glDisableVertexAttribArray(aPos);
++		glBindBuffer(GL_ARRAY_BUFFER, 0);
++		glBindTexture(GL_TEXTURE_2D, 0);
++		glUseProgram(0);
++
++		glEnable(GL_DEPTH_TEST);
++		glEnable(GL_ALPHA_TEST);
++		glEnable(GL_BLEND);
++		glMatrixMode(GL_PROJECTION);
++		glPopMatrix();
++		glMatrixMode(GL_MODELVIEW);
++		glPopMatrix();
++	}
++
++	public void cleanup() {
++		glDeleteProgram(programID);
++		glDeleteBuffers(vboID);
++		glDeleteTextures(copyTexID);
++	}
++}
 --- /dev/null
 +++ net/minecraft/src/EntityVirusMob.java
 @@ -1,0 +1,87 @@
