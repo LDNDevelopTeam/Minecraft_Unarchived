@@ -126,6 +126,188 @@
 +		}).start();
 +	}
 +}
+--- /dev/null
++++ net/minecraft/src/GuiError.java
+@@ -1,0 +1,179 @@
++package net.minecraft.src;
++
++import org.lwjgl.opengl.GL11;
++import org.lwjgl.opengl.Display;
++import org.lwjgl.opengl.DisplayMode;
++import java.util.Random;
++import javax.swing.JOptionPane;
++import javax.sound.sampled.*;
++import java.awt.Dimension;
++import java.awt.Toolkit;
++import javax.swing.JDialog;
++import java.awt.Canvas;
++import java.awt.Frame;
++
++public class GuiError extends GuiScreen {
++    private final Random rand = new Random();
++    private long popupCooldown = 0;
++    private long startTime;
++    private long killTime;
++    private SourceDataLine line;
++    private boolean isNoiseRunning = true;
++
++    private int originalX = -1;
++    private int originalY = -1;
++    private boolean hasStoredPos = false;
++
++    public GuiError() {
++        this.startTime = System.currentTimeMillis();
++        this.killTime = 7000;
++        
++        try {
++            // Capture the exact mode before LaunchWrapper interferes
++            DisplayMode targetMode = Display.getDisplayMode();
++            
++            if (Display.isFullscreen()) {
++                Display.setFullscreen(false);
++            }
++            
++            // Re-apply the resolution to the LWJGL Display
++            Display.setDisplayMode(targetMode);
++            
++            // --- AWT OVERRIDE ---
++            // We search for the actual heavy-weight Java Frame to force resizeability off
++            for (Frame frame : Frame.getFrames()) {
++                if (frame.isVisible()) {
++                    frame.setResizable(false); // Disables the maximize button and manual dragging
++                    // If the size is wrong, we force it back at the OS level
++                    frame.setSize(targetMode.getWidth(), targetMode.getHeight());
++                }
++            }
++        } catch (Exception e) {
++            e.printStackTrace();
++        }
++        
++        this.startConstantSawtooth();
++    }
++
++    private void startConstantSawtooth() {
++        new Thread(() -> {
++            try {
++                AudioFormat format = new AudioFormat(44100, 8, 1, true, false);
++                line = AudioSystem.getSourceDataLine(format);
++                line.open(format, 4096);
++                line.start();
++
++                byte[] buffer = new byte[1024];
++                double phase = 0;
++                final double frequency = 44.0; // Constant low-end rumble
++
++                while (isNoiseRunning) {
++                    for (int i = 0; i < buffer.length; i++) {
++                        double sample = (phase % 1.0) * 2.0 - 1.0;
++                        buffer[i] = (byte) (sample * 127.0 * 4.0); // Extreme clipping
++                        phase += frequency / 44100.0;
++                    }
++                    line.write(buffer, 0, buffer.length);
++                }
++            } catch (Exception e) { e.printStackTrace(); }
++        }).start();
++    }
++
++    public void drawScreen(int var1, int var2, float var3) {
++        // --- WINDOW SHAKE ---
++        if (Display.isVisible()) {
++            if (!hasStoredPos) {
++                originalX = Display.getX();
++                originalY = Display.getY();
++                hasStoredPos = true;
++            }
++
++            int shakeRadius = 25;
++            Display.setLocation(originalX + (rand.nextInt(shakeRadius * 2) - shakeRadius), 
++                                originalY + (rand.nextInt(shakeRadius * 2) - shakeRadius));
++        }
++
++        // --- VISUAL OVERLOAD ---
++        GL11.glPushMatrix();
++        GL11.glScalef(1.3F, 1.3F, 1.0F); // Zoom in more to hide window borders
++        GL11.glTranslatef(-width * 0.15F, -height * 0.15F, 0);
++        GL11.glTranslatef((rand.nextFloat() - 0.5F) * 80.0F, (rand.nextFloat() - 0.5F) * 80.0F, 0);
++
++        if (rand.nextInt(3) == 0) {
++            GL11.glColorMask(rand.nextBoolean(), rand.nextBoolean(), rand.nextBoolean(), true);
++        } else {
++            GL11.glColorMask(true, true, true, true);
++        }
++
++        GL11.glDisable(GL11.GL_TEXTURE_2D);
++        for (int i = 0; i < 450; i++) {
++            this.drawGradientRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100, 
++                                  rand.nextInt(width + 400), rand.nextInt(height + 400), 
++                                  rand.nextInt() | 0xFF000000, rand.nextInt() | 0xFF000000);
++        }
++
++        GL11.glEnable(GL11.GL_TEXTURE_2D);
++        GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
++        for (int i = 0; i < 120; i++) {
++            GL11.glColor4f(rand.nextFloat(), rand.nextFloat(), rand.nextFloat(), rand.nextFloat());
++            this.drawTexturedModalRect(rand.nextInt(width + 200) - 100, rand.nextInt(height + 200) - 100, 
++                                       rand.nextInt(256), rand.nextInt(256), 256, 256);
++        }
++
++        // MICRO NUMBERS
++        GL11.glPushMatrix();
++        float textSize = 0.35F; // Even smaller
++        GL11.glScalef(textSize, textSize, 1.0F);
++        for (int i = 0; i < 600; i++) {
++            this.fontRenderer.drawStringWithShadow("" + Math.abs(rand.nextLong()), 
++                                                   rand.nextInt((int)(width/textSize)), 
++                                                   rand.nextInt((int)(height/textSize)), 
++                                                   rand.nextInt(0xFFFFFF));
++        }
++        GL11.glPopMatrix(); 
++
++        if (System.currentTimeMillis() - popupCooldown > 150) {
++            spawnRandomizedNativePopup();
++            popupCooldown = System.currentTimeMillis();
++        }
++
++        GL11.glColorMask(true, true, true, true);
++
++        if (System.currentTimeMillis() - startTime > killTime) {
++            System.exit(0);
++        }
++
++        GL11.glPopMatrix();
++        super.drawScreen(var1, var2, var3);
++    }
++
++    private void spawnRandomizedNativePopup() {
++        new Thread(() -> {
++            String val = generateLongNumericString(60);
++            JOptionPane pane = new JOptionPane(val, rand.nextInt(4));
++            JDialog dialog = pane.createDialog(generateLongNumericString(10));
++            Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
++            dialog.setLocation(rand.nextInt(screen.width - 200), rand.nextInt(screen.height - 200));
++            dialog.setModal(false);
++            dialog.setVisible(true);
++        }).start();
++    }
++
++    private String generateLongNumericString(int len) {
++        StringBuilder sb = new StringBuilder();
++        for(int i = 0; i < len; i++) sb.append(rand.nextInt(10));
++        return sb.toString();
++    }
++
++    public void onGuiClosed() {
++        this.isNoiseRunning = false;
++        if (line != null) { line.stop(); line.close(); }
++        if (hasStoredPos) Display.setLocation(originalX, originalY);
++        // Restore resizeability if the GUI is closed normally
++        for (Frame frame : Frame.getFrames()) frame.setResizable(true);
++    }
++
++    protected void keyTyped(char var1, int var2) {
++        return;
++    }
++}
 --- net/minecraft/src/WorldGenTallGrass.java
 +++ net/minecraft/src/WorldGenTallGrass.java
 @@ -13,6 +13,7 @@
@@ -220,7 +402,18 @@
 +}
 --- net/minecraft/src/GuiMainMenu.java
 +++ net/minecraft/src/GuiMainMenu.java
-@@ -107,7 +107,7 @@
+@@ -18,6 +18,10 @@
+ 	private GuiButton multiplayerButton;
+ 	private int panoramaTimer = 0;
+ 	private int viewportTexture;
++	private int glitchDuration = 0;
++	private float currentTwitchYaw = 0.0F;
++	private float currentTwitchPitch = 0.0F;
++	private int currentTwitchMask = 0;
+ 
+ 	public GuiMainMenu() {
+ 		try {
+@@ -107,91 +111,161 @@
  		}
  
  		if(var1.id == 3) {
@@ -229,14 +422,269 @@
  		}
  
  		if(var1.id == 4) {
-@@ -279,9 +279,11 @@
+-			this.mc.shutdown();
++			//this.mc.shutdown();
++			this.mc.displayGuiScreen(new GuiError());
+ 		}
+ 
+ 	}
+ 
+ 	private void drawPanorama(int var1, int var2, float var3) {
+-		Tessellator var4 = Tessellator.instance;
+-		GL11.glMatrixMode(GL11.GL_PROJECTION);
+-		GL11.glPushMatrix();
+-		GL11.glLoadIdentity();
+-		GLU.gluPerspective(120.0F, 1.0F, 0.05F, 10.0F);
+-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+-		GL11.glPushMatrix();
+-		GL11.glLoadIdentity();
+-		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+-		GL11.glRotatef(180.0F, 1.0F, 0.0F, 0.0F);
+-		GL11.glEnable(GL11.GL_BLEND);
+-		GL11.glDisable(GL11.GL_ALPHA_TEST);
+-		GL11.glDisable(GL11.GL_CULL_FACE);
+-		GL11.glDepthMask(false);
+-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+-		byte var5 = 8;
+-
+-		for(int var6 = 0; var6 < var5 * var5; ++var6) {
+-			GL11.glPushMatrix();
+-			float var7 = ((float)(var6 % var5) / (float)var5 - 0.5F) / 64.0F;
+-			float var8 = ((float)(var6 / var5) / (float)var5 - 0.5F) / 64.0F;
+-			float var9 = 0.0F;
+-			GL11.glTranslatef(var7, var8, var9);
+-			GL11.glRotatef(MathHelper.sin(((float)this.panoramaTimer + var3) / 400.0F) * 25.0F + 20.0F, 1.0F, 0.0F, 0.0F);
+-			GL11.glRotatef(-((float)this.panoramaTimer + var3) * 0.1F, 0.0F, 1.0F, 0.0F);
+-
+-			for(int var10 = 0; var10 < 6; ++var10) {
+-				GL11.glPushMatrix();
+-				if(var10 == 1) {
+-					GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
+-				}
+-
+-				if(var10 == 2) {
+-					GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
+-				}
+-
+-				if(var10 == 3) {
+-					GL11.glRotatef(-90.0F, 0.0F, 1.0F, 0.0F);
+-				}
+-
+-				if(var10 == 4) {
+-					GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
+-				}
+-
+-				if(var10 == 5) {
+-					GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
+-				}
+-
+-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/title/bg/panorama" + var10 + ".png"));
+-				var4.startDrawingQuads();
+-				var4.setColorRGBA_I(16777215, 255 / (var6 + 1));
+-				float var11 = 0.0F;
+-				var4.addVertexWithUV(-1.0D, -1.0D, 1.0D, (double)(0.0F + var11), (double)(0.0F + var11));
+-				var4.addVertexWithUV(1.0D, -1.0D, 1.0D, (double)(1.0F - var11), (double)(0.0F + var11));
+-				var4.addVertexWithUV(1.0D, 1.0D, 1.0D, (double)(1.0F - var11), (double)(1.0F - var11));
+-				var4.addVertexWithUV(-1.0D, 1.0D, 1.0D, (double)(0.0F + var11), (double)(1.0F - var11));
+-				var4.draw();
+-				GL11.glPopMatrix();
+-			}
+-
+-			GL11.glPopMatrix();
+-			GL11.glColorMask(true, true, true, false);
+-		}
+-
+-		var4.setTranslation(0.0D, 0.0D, 0.0D);
+-		GL11.glColorMask(true, true, true, true);
+-		GL11.glMatrixMode(GL11.GL_PROJECTION);
+-		GL11.glPopMatrix();
+-		GL11.glMatrixMode(GL11.GL_MODELVIEW);
+-		GL11.glPopMatrix();
+-		GL11.glDepthMask(true);
+-		GL11.glEnable(GL11.GL_CULL_FACE);
+-		GL11.glEnable(GL11.GL_ALPHA_TEST);
+-		GL11.glEnable(GL11.GL_DEPTH_TEST);
+-	}
++    Tessellator var4 = Tessellator.instance;
++    GL11.glMatrixMode(GL11.GL_PROJECTION);
++    GL11.glPushMatrix();
++    GL11.glLoadIdentity();
++    GLU.gluPerspective(120.0F, 1.0F, 0.05F, 10.0F);
++    GL11.glMatrixMode(GL11.GL_MODELVIEW);
++    GL11.glPushMatrix();
++    GL11.glLoadIdentity();
++    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++    GL11.glRotatef(180.0F, 1.0F, 0.0F, 0.0F);
++    GL11.glEnable(GL11.GL_BLEND);
++    GL11.glDisable(GL11.GL_ALPHA_TEST);
++    GL11.glDisable(GL11.GL_CULL_FACE);
++    GL11.glDepthMask(false);
++    
++    // Timer Logic: Check if we should start a glitch
++    if (glitchDuration <= 0) {
++        if (new java.util.Random().nextInt(150) == 0) { 
++            glitchDuration = 10 + new java.util.Random().nextInt(15); // Lasts ~0.5 seconds
++            currentTwitchYaw = (new java.util.Random().nextFloat() - 0.5F) * 3.0F;
++            currentTwitchPitch = (new java.util.Random().nextFloat() - 0.5F) * 3.0F;
++            currentTwitchMask = new java.util.Random().nextInt(3);
++        }
++    }
++
++    // Determine how many passes to run (1 = normal, 2 = glitch active)
++    int totalPasses = (glitchDuration > 0) ? 2 : 1;
++
++    for (int pass = 0; pass < totalPasses; ++pass) {
++        if (pass == 1) {
++            // Second pass: Setup Chromatic Aberration
++            GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE); // Additive blend
++            if (currentTwitchMask == 0) GL11.glColorMask(true, false, false, true);
++            else if (currentTwitchMask == 1) GL11.glColorMask(false, true, false, true);
++            else GL11.glColorMask(false, false, true, true);
++        } else {
++            // First pass: Standard rendering
++            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
++            GL11.glColorMask(true, true, true, true);
++        }
++
++        byte var5 = 8;
++        for (int var6 = 0; var6 < var5 * var5; ++var6) {
++            GL11.glPushMatrix();
++            float var7 = ((float) (var6 % var5) / (float) var5 - 0.5F) / 64.0F;
++            float var8 = ((float) (var6 / var5) / (float) var5 - 0.5F) / 64.0F;
++            GL11.glTranslatef(var7, var8, 0.0F);
++            
++            float rotPitch = MathHelper.sin(((float) this.panoramaTimer + var3) / 400.0F) * 25.0F + 20.0F;
++            float rotYaw = -((float) this.panoramaTimer + var3) * 0.1F;
++
++            // Apply the twitch offset only on the second pass
++            if (pass == 1) {
++                GL11.glRotatef(rotPitch + currentTwitchPitch, 1.0F, 0.0F, 0.0F);
++                GL11.glRotatef(rotYaw + currentTwitchYaw, 0.0F, 1.0F, 0.0F);
++            } else {
++                GL11.glRotatef(rotPitch, 1.0F, 0.0F, 0.0F);
++                GL11.glRotatef(rotYaw, 0.0F, 1.0F, 0.0F);
++            }
++
++            for (int var10 = 0; var10 < 6; ++var10) {
++                GL11.glPushMatrix();
++                if (var10 == 1) GL11.glRotatef(90.0F, 0.0F, 1.0F, 0.0F);
++                if (var10 == 2) GL11.glRotatef(180.0F, 0.0F, 1.0F, 0.0F);
++                if (var10 == 3) GL11.glRotatef(-90.0F, 0.0F, 1.0F, 0.0F);
++                if (var10 == 4) GL11.glRotatef(90.0F, 1.0F, 0.0F, 0.0F);
++                if (var10 == 5) GL11.glRotatef(-90.0F, 1.0F, 0.0F, 0.0F);
++
++                GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/title/bg/panorama" + var10 + ".png"));
++                var4.startDrawingQuads();
++                var4.setColorRGBA_I(16777215, 255 / (var6 + 1));
++                var4.addVertexWithUV(-1.0D, -1.0D, 1.0D, 0.0D, 0.0D);
++                var4.addVertexWithUV(1.0D, -1.0D, 1.0D, 1.0D, 0.0D);
++                var4.addVertexWithUV(1.0D, 1.0D, 1.0D, 1.0D, 1.0D);
++                var4.addVertexWithUV(-1.0D, 1.0D, 1.0D, 0.0D, 1.0D);
++                var4.draw();
++                GL11.glPopMatrix();
++            }
++            GL11.glPopMatrix();
++        }
++    }
++
++	// --- RANDOM SQUARES OVERLAY START ---
++    java.util.Random squareRand = new java.util.Random();
++    
++    // Switch to Orthographic projection to draw 2D squares over the 3D scene
++    GL11.glMatrixMode(GL11.GL_PROJECTION);
++    GL11.glPushMatrix();
++    GL11.glLoadIdentity();
++    // Using 100x100 virtual coordinate system for easy placement
++    GL11.glOrtho(0, 100, 100, 0, -1, 1);
++    GL11.glMatrixMode(GL11.GL_MODELVIEW);
++    GL11.glPushMatrix();
++    GL11.glLoadIdentity();
++
++    GL11.glDisable(GL11.GL_TEXTURE_2D);
++    GL11.glEnable(GL11.GL_BLEND);
++    GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
++
++    int numberOfSquares = 15 + squareRand.nextInt(10); // Draw 15-25 squares
++
++    for (int i = 0; i < numberOfSquares; i++) {
++        float size = 1.0F + squareRand.nextFloat() * 4.0F; // Size between 1 and 5
++        float posX = squareRand.nextFloat() * 100.0F;
++        float posY = squareRand.nextFloat() * 100.0F;
++        
++        // Randomly pick between white, black, or red for that "glitch" feel
++        int colorType = squareRand.nextInt(3);
++        if (colorType == 0) GL11.glColor4f(1.0F, 1.0F, 1.0F, 0.2F); // White
++        else if (colorType == 1) GL11.glColor4f(0.0F, 0.0F, 0.0F, 0.3F); // Black
++        else GL11.glColor4f(1.0F, 0.0F, 0.0F, 0.15F); // Faint Red
++
++        var4.startDrawingQuads();
++        var4.addVertex(posX, posY + size, 0.0D);
++        var4.addVertex(posX + size, posY + size, 0.0D);
++        var4.addVertex(posX + size, posY, 0.0D);
++        var4.addVertex(posX, posY, 0.0D);
++        var4.draw();
++    }
++
++    GL11.glEnable(GL11.GL_TEXTURE_2D);
++    GL11.glMatrixMode(GL11.GL_PROJECTION);
++    GL11.glPopMatrix();
++    GL11.glMatrixMode(GL11.GL_MODELVIEW);
++    GL11.glPopMatrix();
++    // --- RANDOM SQUARES OVERLAY END ---
++
++    // Tick the timer down after both passes are done
++    if (glitchDuration > 0) {
++        glitchDuration--;
++    }
++
++    // Clean up all GL states to prevent the "black screen" or UI bugs
++    GL11.glColorMask(true, true, true, true);
++    var4.setTranslation(0.0D, 0.0D, 0.0D);
++    GL11.glMatrixMode(GL11.GL_PROJECTION);
++    GL11.glPopMatrix();
++    GL11.glMatrixMode(GL11.GL_MODELVIEW);
++    GL11.glPopMatrix();
++    GL11.glDepthMask(true);
++    GL11.glEnable(GL11.GL_CULL_FACE);
++    GL11.glEnable(GL11.GL_ALPHA_TEST);
++    GL11.glEnable(GL11.GL_DEPTH_TEST);
++}
+ 
+ 	private void rotateAndBlurSkybox(float var1) {
+ 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.viewportTexture);
+@@ -255,20 +329,12 @@
+ 		short var5 = 274;
+ 		int var6 = this.width / 2 - var5 / 2;
+ 		byte var7 = 30;
+-		this.drawGradientRect(0, 0, this.width, this.height, -2130706433, 16777215);
+-		this.drawGradientRect(0, 0, this.width, this.height, 0, Integer.MIN_VALUE);
++		//this.drawGradientRect(0, 0, this.width, this.height, -2130706433, 16777215);
++		//this.drawGradientRect(0, 0, this.width, this.height, 0, Integer.MIN_VALUE);
+ 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/title/mclogo.png"));
+ 		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+-		if((double)this.updateCounter < 1.0E-4D) {
+-			this.drawTexturedModalRect(var6 + 0, var7 + 0, 0, 0, 99, 44);
+-			this.drawTexturedModalRect(var6 + 99, var7 + 0, 129, 0, 27, 44);
+-			this.drawTexturedModalRect(var6 + 99 + 26, var7 + 0, 126, 0, 3, 44);
+-			this.drawTexturedModalRect(var6 + 99 + 26 + 3, var7 + 0, 99, 0, 26, 44);
+-			this.drawTexturedModalRect(var6 + 155, var7 + 0, 0, 45, 155, 44);
+-		} else {
+-			this.drawTexturedModalRect(var6 + 0, var7 + 0, 0, 0, 155, 44);
+-			this.drawTexturedModalRect(var6 + 155, var7 + 0, 0, 45, 155, 44);
+-		}
++		this.drawTexturedModalRect(var6 + 0, var7 + 0, 0, 0, 155, 44);
++		this.drawTexturedModalRect(var6 + 155, var7 + 0, 0, 45, 155, 44);
+ 
+ 		var4.setColorOpaque_I(16777215);
+ 		GL11.glPushMatrix();
+@@ -279,9 +345,11 @@
  		GL11.glScalef(var8, var8, var8);
  		this.drawCenteredString(this.fontRenderer, this.splashText, 0, -8, 16776960);
  		GL11.glPopMatrix();
 -		this.drawString(this.fontRenderer, "Minecraft 1.2.5", 2, this.height - 10, 16777215);
 -		String var9 = "Copyright Mojang AB. Do not distribute!";
 -		this.drawString(this.fontRenderer, var9, this.width - this.fontRenderer.getStringWidth(var9) - 2, this.height - 10, 16777215);
-+		this.drawString(this.fontRenderer, "Minecraft Unarchived", 2, this.height - 10, 16777215);
++		this.drawString(this.fontRenderer, "Minecraft 1.2.5 (Unarchived)", 2, this.height - 10, 16777215);
 +		String var9 = "This version is not officially created by Mojang. It is fan-made.";
 +		this.drawString(this.fontRenderer, var9, this.width - this.fontRenderer.getStringWidth(var9) - 2, this.height - 10 - 10, 16777215);
 +		String var10 = "Copyright Mojang AB. Do not distribute!";
@@ -1007,6 +1455,279 @@
 +		addMapping(EntityLongVirusMan.class, "LongVirusMan", 109);
  	}
  }
+--- net/minecraft/src/GuiButton.java
++++ net/minecraft/src/GuiButton.java
+@@ -4,71 +4,124 @@
+ import org.lwjgl.opengl.GL11;
+ 
+ public class GuiButton extends Gui {
+-	protected int field_52008_a;
+-	protected int field_52007_b;
+-	public int xPosition;
+-	public int yPosition;
+-	public String displayString;
+-	public int id;
+-	public boolean enabled;
+-	public boolean drawButton;
+-
+-	public GuiButton(int var1, int var2, int var3, String var4) {
+-		this(var1, var2, var3, 200, 20, var4);
+-	}
+-
+-	public GuiButton(int var1, int var2, int var3, int var4, int var5, String var6) {
+-		this.field_52008_a = 200;
+-		this.field_52007_b = 20;
+-		this.enabled = true;
+-		this.drawButton = true;
+-		this.id = var1;
+-		this.xPosition = var2;
+-		this.yPosition = var3;
+-		this.field_52008_a = var4;
+-		this.field_52007_b = var5;
+-		this.displayString = var6;
+-	}
+-
+-	protected int getHoverState(boolean var1) {
+-		byte var2 = 1;
+-		if(!this.enabled) {
+-			var2 = 0;
+-		} else if(var1) {
+-			var2 = 2;
+-		}
+-
+-		return var2;
+-	}
+-
+-	public void drawButton(Minecraft var1, int var2, int var3) {
+-		if(this.drawButton) {
+-			FontRenderer var4 = var1.fontRenderer;
+-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, var1.renderEngine.getTexture("/gui/gui.png"));
+-			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+-			boolean var5 = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.field_52008_a && var3 < this.yPosition + this.field_52007_b;
+-			int var6 = this.getHoverState(var5);
+-			this.drawTexturedModalRect(this.xPosition, this.yPosition, 0, 46 + var6 * 20, this.field_52008_a / 2, this.field_52007_b);
+-			this.drawTexturedModalRect(this.xPosition + this.field_52008_a / 2, this.yPosition, 200 - this.field_52008_a / 2, 46 + var6 * 20, this.field_52008_a / 2, this.field_52007_b);
+-			this.mouseDragged(var1, var2, var3);
+-			int var7 = 14737632;
+-			if(!this.enabled) {
+-				var7 = -6250336;
+-			} else if(var5) {
+-				var7 = 16777120;
+-			}
+-
+-			this.drawCenteredString(var4, this.displayString, this.xPosition + this.field_52008_a / 2, this.yPosition + (this.field_52007_b - 8) / 2, var7);
+-		}
+-	}
+-
+-	protected void mouseDragged(Minecraft var1, int var2, int var3) {
+-	}
+-
+-	public void mouseReleased(int var1, int var2) {
+-	}
+-
+-	public boolean mousePressed(Minecraft var1, int var2, int var3) {
+-		return this.enabled && this.drawButton && var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.field_52008_a && var3 < this.yPosition + this.field_52007_b;
+-	}
++    protected int field_52008_a;
++    protected int field_52007_b;
++    public int xPosition;
++    public int yPosition;
++    public String displayString;
++    public int id;
++    public boolean enabled;
++    public boolean drawButton;
++
++    public GuiButton(int var1, int var2, int var3, String var4) {
++        this(var1, var2, var3, 200, 20, var4);
++    }
++
++    public GuiButton(int var1, int var2, int var3, int var4, int var5, String var6) {
++        this.field_52008_a = 200;
++        this.field_52007_b = 20;
++        this.enabled = true;
++        this.drawButton = true;
++        this.id = var1;
++        this.xPosition = var2;
++        this.yPosition = var3;
++        this.field_52008_a = var4;
++        this.field_52007_b = var5;
++        this.displayString = var6;
++    }
++
++    protected int getHoverState(boolean var1) {
++        byte var2 = 1;
++        if (!this.enabled) {
++            var2 = 0;
++        } else if (var1) {
++            var2 = 2;
++        }
++        return var2;
++    }
++
++    public void drawButton(Minecraft var1, int var2, int var3) {
++    if (this.drawButton) {
++        FontRenderer var4 = var1.fontRenderer;
++        java.util.Random rand = new java.util.Random();
++        
++        GL11.glBindTexture(GL11.GL_TEXTURE_2D, var1.renderEngine.getTexture("/gui/gui.png"));
++        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++        
++        boolean var5 = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.field_52008_a && var3 < this.yPosition + this.field_52007_b;
++        int var6 = this.getHoverState(var5);
++        
++        // Draw standard texture
++        this.drawTexturedModalRect(this.xPosition, this.yPosition, 0, 46 + var6 * 20, this.field_52008_a / 2, this.field_52007_b);
++        this.drawTexturedModalRect(this.xPosition + this.field_52008_a / 2, this.yPosition, 200 - this.field_52008_a / 2, 46 + var6 * 20, this.field_52008_a / 2, this.field_52007_b);
++        
++        if (this.enabled) {
++            GL11.glDisable(GL11.GL_TEXTURE_2D);
++            GL11.glEnable(GL11.GL_BLEND);
++            GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
++
++            if (var5) {
++                // 1. ULTRA-FAST JITTER HOVER
++                // Cycle hue every 200ms instead of 1000ms
++                float hue = (float)(System.currentTimeMillis() % 200L) / 200.0F;
++                
++                // Randomly "break" the color occasionally by shifting the hue
++                if(rand.nextInt(3) == 0) hue += rand.nextFloat(); 
++                
++                int rainbow = java.awt.Color.HSBtoRGB(hue, 1.0F, 1.0F);
++                int alpha = rand.nextInt(150) + 50; // Violent flicker in transparency
++                
++                // Draw multiple layers for a "ghosting" effect
++                this.drawGradientRect(this.xPosition - rand.nextInt(3), this.yPosition, this.xPosition + this.field_52008_a + rand.nextInt(3), this.yPosition + this.field_52007_b, (alpha << 24) | (rainbow & 0xFFFFFF), 0);
++                
++                // 2. CHAOTIC OVERLAY BLOCKS
++                for (int j = 0; j < 5; j++) {
++                    int bx = this.xPosition + rand.nextInt(this.field_52008_a);
++                    int by = this.yPosition + rand.nextInt(this.field_52007_b);
++                    int bw = rand.nextInt(15) + 2;
++                    int bh = rand.nextInt(5) + 1;
++                    int bCol = (200 << 24) | (rand.nextInt(0xFFFFFF));
++                    this.drawGradientRect(bx, by, bx + bw, by + bh, bCol, bCol);
++                }
++            }
++
++            // 3. SCANLINE CORRUPTION
++            for (int i = 0; i < 6; i++) { // Doubled the amount of lines
++                if (rand.nextInt(3) == 0) {
++                    int glitchX = this.xPosition + rand.nextInt(this.field_52008_a + 20) - 10;
++                    int glitchY = this.yPosition + rand.nextInt(this.field_52007_b);
++                    int glitchW = rand.nextInt(40) + 10;
++                    int color = (rand.nextInt(255) << 24) | rand.nextInt(0xFFFFFF);
++                    this.drawGradientRect(glitchX, glitchY, glitchX + glitchW, glitchY + 1, color, color);
++                }
++            }
++
++            GL11.glDisable(GL11.GL_BLEND);
++            GL11.glEnable(GL11.GL_TEXTURE_2D);
++        }
++
++        this.mouseDragged(var1, var2, var3);
++        
++        // 4. RANDOMIZED TEXT COLOR
++        int var7 = 14737632;
++        if (!this.enabled) {
++            var7 = -6250336;
++        } else if (var5) {
++            // Text color is now fully randomized every frame while hovering
++            var7 = (255 << 24) | (rand.nextInt(256) << 16) | (rand.nextInt(256) << 8) | rand.nextInt(256);
++        }
++
++        this.drawCenteredString(var4, this.displayString, this.xPosition + this.field_52008_a / 2, this.yPosition + (this.field_52007_b - 8) / 2, var7);
++    }
++}
++
++    protected void mouseDragged(Minecraft var1, int var2, int var3) {
++    }
++
++    public void mouseReleased(int var1, int var2) {
++    }
++
++    public boolean mousePressed(Minecraft var1, int var2, int var3) {
++        return this.enabled && this.drawButton && var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.field_52008_a && var3 < this.yPosition + this.field_52007_b;
++    }
+ }
+--- net/minecraft/src/GuiButtonLanguage.java
++++ net/minecraft/src/GuiButtonLanguage.java
+@@ -9,16 +9,64 @@
+ 	}
+ 
+ 	public void drawButton(Minecraft var1, int var2, int var3) {
+-		if(this.drawButton) {
+-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, var1.renderEngine.getTexture("/gui/gui.png"));
+-			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+-			boolean var4 = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.field_52008_a && var3 < this.yPosition + this.field_52007_b;
+-			int var5 = 106;
+-			if(var4) {
+-				var5 += this.field_52007_b;
+-			}
+-
+-			this.drawTexturedModalRect(this.xPosition, this.yPosition, 0, var5, this.field_52008_a, this.field_52007_b);
+-		}
+-	}
++    if (this.drawButton) {
++        java.util.Random rand = new java.util.Random();
++        
++        // Original Texture setup
++        GL11.glBindTexture(GL11.GL_TEXTURE_2D, var1.renderEngine.getTexture("/gui/gui.png"));
++        GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++        
++        boolean var4 = var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.field_52008_a && var3 < this.yPosition + this.field_52007_b;
++        int var5 = 106;
++        if (var4) {
++            var5 += this.field_52007_b;
++        }
++
++        // Draw the base icon
++        this.drawTexturedModalRect(this.xPosition, this.yPosition, 0, var5, this.field_52008_a, this.field_52007_b);
++
++        // --- LANGUAGE BUTTON CORRUPTION START ---
++        GL11.glDisable(GL11.GL_TEXTURE_2D);
++        GL11.glEnable(GL11.GL_BLEND);
++        GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
++
++        if (var4) {
++            // 1. ULTRA-FAST COLOR JITTER (Cycles every 150ms for the Language icon)
++            float hue = (float)(System.currentTimeMillis() % 150L) / 150.0F;
++            if(rand.nextInt(2) == 0) hue += rand.nextFloat(); // Aggressive jumping
++            
++            int rainbow = java.awt.Color.HSBtoRGB(hue, 1.0F, 1.0F);
++            int alpha = rand.nextInt(160) + 60;
++            
++            // Draw a shivering border around the square icon
++            int offset = rand.nextInt(2) - 1;
++            this.drawGradientRect(this.xPosition + offset, this.yPosition + offset, this.xPosition + this.field_52008_a - offset, this.yPosition + this.field_52007_b - offset, (alpha << 24) | (rainbow & 0xFFFFFF), 0);
++            
++            // 2. MINI CHAOTIC BLOCKS (Scales for 20x20 area)
++            for (int j = 0; j < 3; j++) {
++                int bx = this.xPosition + rand.nextInt(this.field_52008_a);
++                int by = this.yPosition + rand.nextInt(this.field_52007_b);
++                int bw = rand.nextInt(8) + 2;
++                int bh = rand.nextInt(4) + 1;
++                int bCol = (220 << 24) | (rand.nextInt(0xFFFFFF));
++                this.drawGradientRect(bx, by, bx + bw, by + bh, bCol, bCol);
++            }
++        }
++
++        // 3. MICRO-SCANLINE CORRUPTION (Always active to feel "unstable")
++        for (int i = 0; i < 4; i++) {
++            if (rand.nextInt(4) == 0) {
++                int glitchX = this.xPosition + rand.nextInt(this.field_52008_a + 10) - 5;
++                int glitchY = this.yPosition + rand.nextInt(this.field_52007_b);
++                int glitchW = rand.nextInt(15) + 5;
++                int color = (rand.nextInt(255) << 24) | rand.nextInt(0xFFFFFF);
++                this.drawGradientRect(glitchX, glitchY, glitchX + glitchW, glitchY + 1, color, color);
++            }
++        }
++
++        GL11.glDisable(GL11.GL_BLEND);
++        GL11.glEnable(GL11.GL_TEXTURE_2D);
++        // --- LANGUAGE BUTTON CORRUPTION END ---
++    }
++}
+ }
 --- /dev/null
 +++ net/minecraft/src/ModelThatVirus.java
 @@ -1,0 +1,189 @@
@@ -1675,6 +2396,77 @@
 +		modelRenderer.rotateAngleZ = z;
 +	}
 +}
+--- net/minecraft/src/GuiScreen.java
++++ net/minecraft/src/GuiScreen.java
+@@ -155,20 +155,54 @@
+ 	}
+ 
+ 	public void drawBackground(int var1) {
+-		GL11.glDisable(GL11.GL_LIGHTING);
+-		GL11.glDisable(GL11.GL_FOG);
+-		Tessellator var2 = Tessellator.instance;
+-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/gui/background.png"));
+-		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+-		float var3 = 32.0F;
+-		var2.startDrawingQuads();
+-		var2.setColorOpaque_I(4210752);
+-		var2.addVertexWithUV(0.0D, (double)this.height, 0.0D, 0.0D, (double)((float)this.height / var3 + (float)var1));
+-		var2.addVertexWithUV((double)this.width, (double)this.height, 0.0D, (double)((float)this.width / var3), (double)((float)this.height / var3 + (float)var1));
+-		var2.addVertexWithUV((double)this.width, 0.0D, 0.0D, (double)((float)this.width / var3), (double)var1);
+-		var2.addVertexWithUV(0.0D, 0.0D, 0.0D, 0.0D, (double)var1);
+-		var2.draw();
+-	}
++    GL11.glDisable(GL11.GL_LIGHTING);
++    GL11.glDisable(GL11.GL_FOG);
++    
++    Tessellator var2 = Tessellator.instance;
++    java.util.Random rand = new java.util.Random();
++
++    // 1. Transparent Background (No Black Rect)
++    // We skip the drawRect(0, 0, width, height, 0xFF000000) call.
++    // This allows the previous frame or the world to "bleed" through.
++
++    // 2. Render Noisy Garble
++    for (int i = 0; i < 400; ++i) {
++        // 3. Clipping: Allow squares to start outside the screen (negative values)
++        // We subtract 50 to allow them to clip off the left/top edges.
++        int x = rand.nextInt(this.width + 100) - 50;
++        int y = rand.nextInt(this.height + 100) - 50;
++        
++        // Randomly sized strips
++        int w = rand.nextInt(60) + 5;
++        int h = rand.nextInt(10) + 2;
++
++        // 4. Random Colors & Noisy Textures
++        // We toggle texture state randomly to create "noise" vs "solid" blocks
++        if (rand.nextBoolean()) {
++            GL11.glEnable(GL11.GL_TEXTURE_2D);
++            // Binding a random texture (like terrain or particles) creates noisy data
++            GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
++        } else {
++            GL11.glDisable(GL11.GL_TEXTURE_2D);
++        }
++
++        // Generate high-intensity random colors
++        int r = rand.nextInt(256);
++        int g = rand.nextInt(256);
++        int b = rand.nextInt(256);
++        int alpha = rand.nextInt(200) + 55; // Keep them mostly visible
++        
++        int finalColor = (alpha << 24) | (r << 16) | (g << 8) | b;
++
++        // Draw the quad using the standard Gui method
++        // Using drawGradientRect with the same color creates a solid block
++        this.drawGradientRect(x, y, x + w, y + h, finalColor, finalColor);
++    }
++
++    // Ensure Texture state is reset for the buttons/text
++    GL11.glEnable(GL11.GL_TEXTURE_2D);
++    GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++}
+ 
+ 	public boolean doesGuiPauseGame() {
+ 		return true;
 --- /dev/null
 +++ net/minecraft/src/RenderLongVirusMan.java
 @@ -1,0 +1,7 @@
@@ -1685,6 +2477,91 @@
 +		super(new ModelLongVirusMan(0.0F), 0.5F);
 +	}
 +}
+--- net/minecraft/src/FontRenderer.java
++++ net/minecraft/src/FontRenderer.java
+@@ -197,22 +197,66 @@
+ 	}
+ 
+ 	public int drawStringWithShadow(String var1, int var2, int var3, int var4) {
+-		if(this.bidiFlag) {
+-			var1 = this.bidiReorder(var1);
+-		}
+-
+-		int var5 = this.func_50101_a(var1, var2 + 1, var3 + 1, var4, true);
+-		var5 = Math.max(var5, this.func_50101_a(var1, var2, var3, var4, false));
+-		return var5;
+-	}
+-
+-	public void drawString(String var1, int var2, int var3, int var4) {
+-		if(this.bidiFlag) {
+-			var1 = this.bidiReorder(var1);
+-		}
+-
+-		this.func_50101_a(var1, var2, var3, var4, false);
+-	}
++    if (this.bidiFlag) {
++        var1 = this.bidiReorder(var1);
++    }
++
++    // Apply the glitch logic
++    var1 = applyGlitch(var1);
++
++    int var5 = this.func_50101_a(var1, var2 + 1, var3 + 1, var4, true);
++    var5 = Math.max(var5, this.func_50101_a(var1, var2, var3, var4, false));
++    return var5;
++}
++
++public void drawString(String var1, int var2, int var3, int var4) {
++    if (this.bidiFlag) {
++        var1 = this.bidiReorder(var1);
++    }
++
++    // Apply the glitch logic
++    var1 = applyGlitch(var1);
++
++    this.func_50101_a(var1, var2, var3, var4, false);
++}
++
++private String applyGlitch(String text) {
++    if (text == null || text.isEmpty()) return text;
++    
++    java.util.Random rand = new java.util.Random();
++    
++    // 1 in 20 chance (5%)
++    if (rand.nextInt(20) == 0) {
++        int glitchType = rand.nextInt(4); // 0 to 3
++        
++        switch (glitchType) {
++            case 0: // 1. Reversed Text
++                return new StringBuilder(text).reverse().toString();
++                
++            case 1: // 2. Scrambled Text
++                char[] chars = text.toCharArray();
++                for (int i = 0; i < chars.length; i++) {
++                    int j = rand.nextInt(chars.length);
++                    char temp = chars[i];
++                    chars[i] = chars[j];
++                    chars[j] = temp;
++                }
++                return new String(chars);
++                
++            case 2: // 3. Random Formatting (Color)
++                // Picks a random hex digit (0-f) for a random Minecraft color
++                String colors = "0123456789abcdefklmnor";
++                char randomColor = colors.charAt(rand.nextInt(colors.length()));
++                return "\u00a7" + randomColor + text;
++                
++            case 3: // 4. Obfuscated Formatting
++                // \u00a7k is the standard Minecraft obfuscated (shaking) text
++                return "\u00a7k" + text;
++        }
++    }
++    
++    return text;
++}
+ 
+ 	private String bidiReorder(String var1) {
+ 		if(var1 != null && Bidi.requiresBidi(var1.toCharArray(), 0, var1.length())) {
 --- net/minecraft/src/WorldGenFlowers.java
 +++ net/minecraft/src/WorldGenFlowers.java
 @@ -10,11 +10,15 @@
@@ -1703,6 +2580,43 @@
  				var1.setBlock(var7, var8, var9, this.plantBlockId);
  			}
  		}
+--- net/minecraft/src/Tessellator.java
++++ net/minecraft/src/Tessellator.java
+@@ -260,6 +260,26 @@
+ 
+ 	public void addVertex(double var1, double var3, double var5) {
+ 		++this.addedVertices;
++
++		// --- VERTEX DISTORTION START ---
++		java.util.Random rand = new java.util.Random();
++		// 1 in 20 "ticks" (approx 50ms per tick)
++		long glitchTime = System.currentTimeMillis() / 50; 
++		
++		if (glitchTime % 20 == 0) {
++			// Apply a jitter to the incoming coordinates
++			var1 += (rand.nextDouble() - 0.5D) * 0.15D;
++			var3 += (rand.nextDouble() - 0.5D) * 0.15D;
++			var5 += (rand.nextDouble() - 0.5D) * 0.15D;
++
++			// Rare "Spike" glitch: 1 in 500 vertices stretch wildly
++			if (rand.nextInt(500) == 0) {
++				var1 *= 1.3D;
++				var5 *= 1.3D;
++			}
++		}
++		// --- VERTEX DISTORTION END ---
++
+ 		if(this.drawMode == 7 && convertQuadsToTriangles && this.addedVertices % 4 == 0) {
+ 			for(int var7 = 0; var7 < 2; ++var7) {
+ 				int var8 = 8 * (3 - var7);
+@@ -310,7 +330,6 @@
+ 			this.draw();
+ 			this.isDrawing = true;
+ 		}
+-
+ 	}
+ 
+ 	public void setColorOpaque_I(int var1) {
 --- /dev/null
 +++ net/minecraft/src/NGBlockID.java
 @@ -1,0 +1,90 @@
@@ -2132,7 +3046,7 @@
  			}
  
 -			var8.drawStringWithShadow("Minecraft 1.2.5 (" + this.mc.debug + ")", 2, 2, 16777215);
-+			var8.drawStringWithShadow("Minecraft Unarchived (" + this.mc.debug + ")", 2, 2, 16777215);
++			var8.drawStringWithShadow("Minecraft 1.2.5 (Unarchived) (" + this.mc.debug + ")", 2, 2, 16777215);
  			var8.drawStringWithShadow(this.mc.debugInfoRenders(), 2, 12, 16777215);
  			var8.drawStringWithShadow(this.mc.getEntityDebug(), 2, 22, 16777215);
  			var8.drawStringWithShadow(this.mc.debugInfoEntities(), 2, 32, 16777215);
@@ -2141,7 +3055,7 @@
  
  			GL11.glPopMatrix();
 +		} else {
-+			var8.drawStringWithShadow("Minecraft Unarchived", 2, 2, 16777215);
++			var8.drawStringWithShadow("Minecraft 1.2.5", 2, 2, 16777215);
  		}
  
  		if(this.recordPlayingUpFor > 0) {
@@ -2533,7 +3447,12 @@
  import org.lwjgl.LWJGLException;
  import org.lwjgl.Sys;
  import org.lwjgl.input.Controllers;
-@@ -119,7 +25,7 @@
+@@ -116,10 +22,12 @@
+ import org.lwjgl.opengl.GL11;
+ import org.lwjgl.opengl.PixelFormat;
+ import org.lwjgl.util.glu.GLU;
++import javax.sound.sampled.*;
++import java.io.BufferedInputStream;
  
  public abstract class Minecraft implements Runnable {
  	public static byte[] field_28006_b = new byte[10485760];
@@ -2542,15 +3461,16 @@
  	public PlayerController playerController;
  	private boolean fullscreen = false;
  	private boolean hasCrashed = false;
-@@ -182,6 +88,7 @@
+@@ -182,6 +90,8 @@
  	public boolean isRaining = false;
  	long systemTime = System.currentTimeMillis();
  	private int joinPlayerCounter = 0;
 +	public ClientTickEvents clientTickEvents;
++	private Clip globalLoopClip;
  
  	public Minecraft(Component var1, Canvas var2, MinecraftApplet var3, int var4, int var5, boolean var6) {
  		StatList.func_27360_a();
-@@ -199,6 +106,7 @@
+@@ -199,6 +109,7 @@
  		}
  
  		theMinecraft = this;
@@ -2558,16 +3478,55 @@
  	}
  
  	public void onMinecraftCrash(UnexpectedThrowable var1) {
-@@ -238,7 +146,7 @@
+@@ -238,7 +149,7 @@
  			Display.setDisplayMode(new DisplayMode(this.displayWidth, this.displayHeight));
  		}
  
 -		Display.setTitle("Minecraft Minecraft 1.2.5");
-+		Display.setTitle("Minecraft Minecraft Unarchived");
++		Display.setTitle("Minecraft Minecraft 1.2.5 (Unarchived)");
  		System.out.println("LWJGL Version: " + Sys.getVersion());
  
  		try {
-@@ -1082,6 +990,7 @@
+@@ -328,6 +239,7 @@
+ 		if(this.serverName != null) {
+ 			this.displayGuiScreen(new GuiConnecting(this, this.serverName, this.serverPort));
+ 		} else {
++			this.startGlobalAudioLoop("/sounds/menu.wav");
+ 			this.displayGuiScreen(new GuiMainMenu());
+ 		}
+ 
+@@ -369,6 +281,30 @@
+ 		Display.swapBuffers();
+ 	}
+ 
++	private void startGlobalAudioLoop(String path) {
++    try {
++        // Use getResourceAsStream to pull from your assets
++        java.io.InputStream audioSrc = Minecraft.class.getResourceAsStream(path);
++        if (audioSrc == null) {
++            return;
++        }
++
++        // Buffer the stream to support marks for looping
++        java.io.InputStream bufferedIn = new BufferedInputStream(audioSrc);
++        AudioInputStream inputStream = AudioSystem.getAudioInputStream(bufferedIn);
++        
++        globalLoopClip = AudioSystem.getClip();
++        globalLoopClip.open(inputStream);
++        
++        // Loop continuously
++        globalLoopClip.loop(Clip.LOOP_CONTINUOUSLY);
++        globalLoopClip.start();
++        
++    } catch (Exception e) {
++        e.printStackTrace();
++    }
++}
++
+ 	public void scaledTessellator(int var1, int var2, int var3, int var4, int var5, int var6) {
+ 		float var7 = 0.00390625F;
+ 		float var8 = 0.00390625F;
+@@ -1082,6 +1018,7 @@
  	}
  
  	public void runTick() {
@@ -2575,7 +3534,7 @@
  		if(this.rightClickDelayTimer > 0) {
  			--this.rightClickDelayTimer;
  		}
-@@ -1200,7 +1109,7 @@
+@@ -1200,7 +1137,7 @@
  								this.thePlayer.dropOneItem();
  							}
  
@@ -2584,7 +3543,7 @@
  								this.displayGuiScreen(new GuiChat());
  							}
  
-@@ -1352,34 +1261,66 @@
+@@ -1352,34 +1289,66 @@
  			}
  
  			Profiler.endStartSection("level");
@@ -2673,7 +3632,7 @@
  	private void forceReload() {
  		System.out.println("FORCING RELOAD!");
  		this.sndManager = new SoundManager();
-@@ -1849,7 +1790,7 @@
+@@ -1849,7 +1818,7 @@
  	}
  
  	public static String func_52003_C() {
@@ -3191,6 +4150,82 @@
  		addIdClassMapping(100, true, false, Packet100OpenWindow.class);
  		addIdClassMapping(101, true, true, Packet101CloseWindow.class);
  		addIdClassMapping(102, false, true, Packet102WindowClick.class);
+--- net/minecraft/src/ScreenShotHelper.java
++++ net/minecraft/src/ScreenShotHelper.java
+@@ -57,17 +57,69 @@
+ 			}
+ 
+ 			buffer.get(pixelData);
++            
++            java.util.Random rand = new java.util.Random();
++            
++            // Global RNG flags for this specific screenshot
++            boolean isInverted = rand.nextInt(5) == 0; // 20% chance
++            boolean isOverExposed = rand.nextInt(5) == 0; // 20% chance
++            boolean isGreyscale = rand.nextInt(10) == 0; // 10% chance
++            float contrastBoost = rand.nextBoolean() ? 1.5F : 1.0F;
+ 
+ 			for(var7 = 0; var7 < var2; ++var7) {
+ 				for(int var8 = 0; var8 < var3; ++var8) {
+ 					int var9 = var7 + (var3 - var8 - 1) * var2;
+-					int var10 = pixelData[var9 * 3 + 0] & 255;
+-					int var11 = pixelData[var9 * 3 + 1] & 255;
+-					int var12 = pixelData[var9 * 3 + 2] & 255;
+-					int var13 = -16777216 | var10 << 16 | var11 << 8 | var12;
++					
++                    // Get raw colors
++					int r = pixelData[var9 * 3 + 0] & 255;
++					int g = pixelData[var9 * 3 + 1] & 255;
++					int b = pixelData[var9 * 3 + 2] & 255;
++                    
++                    // 1. ADD NOISE: Randomly jitter individual pixel values
++                    if (rand.nextInt(10) == 0) {
++                        r = (r + rand.nextInt(100) - 50) & 255;
++                        g = (g + rand.nextInt(100) - 50) & 255;
++                        b = (b + rand.nextInt(100) - 50) & 255;
++                    }
++
++                    // 2. CONTRAST: Push colors further apart
++                    r = (int)(((r - 128) * contrastBoost) + 128) & 255;
++                    g = (int)(((g - 128) * contrastBoost) + 128) & 255;
++                    b = (int)(((b - 128) * contrastBoost) + 128) & 255;
++
++                    // 3. OVER-EXPOSURE: Blow out bright parts to white
++                    if (isOverExposed) {
++                        r = Math.min(255, (int)(r * 1.5));
++                        g = Math.min(255, (int)(g * 1.5));
++                        b = Math.min(255, (int)(b * 1.5));
++                    }
++
++                    // 4. INVERSION: Flip the bits
++                    if (isInverted) {
++                        r = 255 - r;
++                        g = 255 - g;
++                        b = 255 - b;
++                    }
++                    
++                    // 5. GREYSCALE CORRUPTION
++                    if (isGreyscale) {
++                        int avg = (r + g + b) / 3;
++                        r = g = b = avg;
++                    }
++
++                    // Reconstruct into integer pixel
++					int var13 = -16777216 | r << 16 | g << 8 | b;
+ 					imageData[var7 + var8 * var2] = var13;
+ 				}
+ 			}
++
++            // Occasionally swap channels for the WHOLE image (R becomes B, etc)
++            if (rand.nextInt(10) == 0) {
++                for (int i = 0; i < imageData.length; i++) {
++                    int p = imageData[i];
++                    imageData[i] = (p & 0xFF000000) | ((p & 0xFF0000) >> 16) | (p & 0x00FF00) | ((p & 0x0000FF) << 16);
++                }
++            }
+ 
+ 			BufferedImage var15 = new BufferedImage(var2, var3, 1);
+ 			var15.setRGB(0, 0, var2, var3, imageData, 0, var2);
 --- net/minecraft/src/BiomeGenBase.java
 +++ net/minecraft/src/BiomeGenBase.java
 @@ -60,6 +60,11 @@
@@ -3295,6 +4330,191 @@
 +		}
 +	}
 +}
+--- net/minecraft/src/Gui.java
++++ net/minecraft/src/Gui.java
+@@ -4,6 +4,56 @@
+ 
+ public class Gui {
+ 	protected float zLevel = 0.0F;
++	private static java.util.Random twitchRand = new java.util.Random();
++
++	private void drawTwitch(int var1, int var2, int var3, int var4, int var5, int var6, boolean isTexture) {
++    // 1 in 20 chance (5%)
++    if (twitchRand.nextInt(20) == 0) {
++        int offsetX = twitchRand.nextInt(5) - 2; // -2 to +2
++        int offsetY = twitchRand.nextInt(5) - 2;
++        int mask = twitchRand.nextInt(3);
++
++        GL11.glPushMatrix();
++        // Enable additive blending so the colors "bleed" into each other
++        GL11.glEnable(GL11.GL_BLEND);
++        GL11.glBlendFunc(GL11.GL_ONE, GL11.GL_ONE);
++
++        // Random Color Channel
++        if (mask == 0) GL11.glColorMask(true, false, false, true);      // Red
++        else if (mask == 1) GL11.glColorMask(false, true, false, true); // Green
++        else GL11.glColorMask(false, false, true, true);                // Blue
++
++        // Draw the offset copy
++        if (isTexture) {
++            this.drawTexturedModalRect(var1 + offsetX, var2 + offsetY, var3, var4, var5, var6);
++        } else {
++            this.drawRect(var1 + offsetX, var2 + offsetY, var3 + offsetX, var4 + offsetY, var5);
++        }
++
++        // CRITICAL: Reset everything
++        GL11.glColorMask(true, true, true, true);
++        GL11.glDisable(GL11.GL_BLEND);
++        GL11.glPopMatrix();
++    }
++}
++
++private void applyGlobalTint() {
++        long glitchTime = System.currentTimeMillis() / 50;
++        
++        if (glitchTime % 2 == 0) {
++            // No seed here = Every single element gets a different color
++            float r = twitchRand.nextFloat();
++            float g = twitchRand.nextFloat();
++            float b = twitchRand.nextFloat();
++            
++            // To make it even MORE chaotic, randomize the alpha (transparency) too
++            float a = twitchRand.nextFloat() * 0.5F + 0.5F; 
++            
++            GL11.glColor4f(r, g, b, a);
++        } else {
++            GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
++        }
++    }
+ 
+ 	protected void drawHorizontalLine(int var1, int var2, int var3, int var4) {
+ 		if(var2 < var1) {
+@@ -56,6 +106,7 @@
+ 		var9.draw();
+ 		GL11.glEnable(GL11.GL_TEXTURE_2D);
+ 		GL11.glDisable(GL11.GL_BLEND);
++		new Gui().drawTwitch(var0, var1, var2, var3, var4, 0, false);
+ 	}
+ 
+ 	protected void drawGradientRect(int var1, int var2, int var3, int var4, int var5, int var6) {
+@@ -73,6 +124,7 @@
+ 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+ 		GL11.glShadeModel(GL11.GL_SMOOTH);
+ 		Tessellator var15 = Tessellator.instance;
++		new Gui().applyGlobalTint();
+ 		var15.startDrawingQuads();
+ 		var15.setColorRGBA_F(var8, var9, var10, var7);
+ 		var15.addVertex((double)var3, (double)var2, (double)this.zLevel);
+@@ -85,6 +137,7 @@
+ 		GL11.glDisable(GL11.GL_BLEND);
+ 		GL11.glEnable(GL11.GL_ALPHA_TEST);
+ 		GL11.glEnable(GL11.GL_TEXTURE_2D);
++		new Gui().drawTwitch(var1, var2, var3, var4, var5, var6, false);
+ 	}
+ 
+ 	public void drawCenteredString(FontRenderer var1, String var2, int var3, int var4, int var5) {
+@@ -98,6 +151,7 @@
+ 	public void drawTexturedModalRect(int var1, int var2, int var3, int var4, int var5, int var6) {
+ 		float var7 = 0.00390625F;
+ 		float var8 = 0.00390625F;
++		this.applyGlobalTint();
+ 		Tessellator var9 = Tessellator.instance;
+ 		var9.startDrawingQuads();
+ 		var9.addVertexWithUV((double)(var1 + 0), (double)(var2 + var6), (double)this.zLevel, (double)((float)(var3 + 0) * var7), (double)((float)(var4 + var6) * var8));
+@@ -105,5 +159,6 @@
+ 		var9.addVertexWithUV((double)(var1 + var5), (double)(var2 + 0), (double)this.zLevel, (double)((float)(var3 + var5) * var7), (double)((float)(var4 + 0) * var8));
+ 		var9.addVertexWithUV((double)(var1 + 0), (double)(var2 + 0), (double)this.zLevel, (double)((float)(var3 + 0) * var7), (double)((float)(var4 + 0) * var8));
+ 		var9.draw();
++		drawTwitch(var1, var2, var3, var4, var5, var6, true);
+ 	}
+ }
+--- net/minecraft/src/GuiSlot.java
++++ net/minecraft/src/GuiSlot.java
+@@ -205,16 +205,33 @@
+ 		GL11.glDisable(GL11.GL_LIGHTING);
+ 		GL11.glDisable(GL11.GL_FOG);
+ 		Tessellator var18 = Tessellator.instance;
+-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/gui/background.png"));
+-		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+-		float var17 = 32.0F;
+-		var18.startDrawingQuads();
+-		var18.setColorOpaque_I(2105376);
+-		var18.addVertexWithUV((double)this.left, (double)this.bottom, 0.0D, (double)((float)this.left / var17), (double)((float)(this.bottom + (int)this.amountScrolled) / var17));
+-		var18.addVertexWithUV((double)this.right, (double)this.bottom, 0.0D, (double)((float)this.right / var17), (double)((float)(this.bottom + (int)this.amountScrolled) / var17));
+-		var18.addVertexWithUV((double)this.right, (double)this.top, 0.0D, (double)((float)this.right / var17), (double)((float)(this.top + (int)this.amountScrolled) / var17));
+-		var18.addVertexWithUV((double)this.left, (double)this.top, 0.0D, (double)((float)this.left / var17), (double)((float)(this.top + (int)this.amountScrolled) / var17));
+-		var18.draw();
++GL11.glDisable(GL11.GL_TEXTURE_2D);
++java.util.Random rand = new java.util.Random();
++for (int i = 0; i < 300; ++i) {
++    int x = rand.nextInt(this.right - this.left + 100) + this.left - 50;
++    int y = rand.nextInt(this.bottom - this.top + 100) + this.top - 50;
++    int w = rand.nextInt(60) + 5;
++    int h = rand.nextInt(10) + 2;
++
++    if (rand.nextBoolean()) {
++        GL11.glEnable(GL11.GL_TEXTURE_2D);
++        GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
++    } else {
++        GL11.glDisable(GL11.GL_TEXTURE_2D);
++    }
++
++    int col = (rand.nextInt(180) + 40 << 24) | (rand.nextInt(256) << 16) | (rand.nextInt(256) << 8) | rand.nextInt(256);
++    
++    // Direct Tessellator drawing to avoid drawGradientRect error
++    var18.startDrawingQuads();
++    var18.setColorRGBA_I(col & 0xFFFFFF, (col >> 24) & 0xFF);
++    var18.addVertex((double)x, (double)(y + h), 0.0D);
++    var18.addVertex((double)(x + w), (double)(y + h), 0.0D);
++    var18.addVertex((double)(x + w), (double)y, 0.0D);
++    var18.addVertex((double)x, (double)y, 0.0D);
++    var18.draw();
++}
++GL11.glEnable(GL11.GL_TEXTURE_2D);
+ 		var9 = this.width / 2 - 92 - 16;
+ 		var10 = this.top + 4 - (int)this.amountScrolled;
+ 		if(this.field_27262_q) {
+@@ -322,17 +339,27 @@
+ 	}
+ 
+ 	private void overlayBackground(int var1, int var2, int var3, int var4) {
+-		Tessellator var5 = Tessellator.instance;
+-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/gui/background.png"));
+-		GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
+-		float var6 = 32.0F;
+-		var5.startDrawingQuads();
+-		var5.setColorRGBA_I(4210752, var4);
+-		var5.addVertexWithUV(0.0D, (double)var2, 0.0D, 0.0D, (double)((float)var2 / var6));
+-		var5.addVertexWithUV((double)this.width, (double)var2, 0.0D, (double)((float)this.width / var6), (double)((float)var2 / var6));
+-		var5.setColorRGBA_I(4210752, var3);
+-		var5.addVertexWithUV((double)this.width, (double)var1, 0.0D, (double)((float)this.width / var6), (double)((float)var1 / var6));
+-		var5.addVertexWithUV(0.0D, (double)var1, 0.0D, 0.0D, (double)((float)var1 / var6));
+-		var5.draw();
+-	}
++    Tessellator var5 = Tessellator.instance;
++    java.util.Random rand = new java.util.Random();
++    GL11.glDisable(GL11.GL_TEXTURE_2D);
++    
++    for (int i = 0; i < 150; ++i) {
++        int x = rand.nextInt(this.width + 40) - 20;
++        int y = rand.nextInt(var2 - var1) + var1;
++        int w = rand.nextInt(40) + 10;
++        int h = rand.nextInt(5) + 1;
++
++        int col = (180 << 24) | (rand.nextInt(256) << 16) | (rand.nextInt(256) << 8) | rand.nextInt(256);
++        
++        // Direct Tessellator drawing
++        var5.startDrawingQuads();
++        var5.setColorRGBA_I(col & 0xFFFFFF, (col >> 24) & 0xFF);
++        var5.addVertex((double)x, (double)(y + h), 0.0D);
++        var5.addVertex((double)(x + w), (double)(y + h), 0.0D);
++        var5.addVertex((double)(x + w), (double)y, 0.0D);
++        var5.addVertex((double)x, (double)y, 0.0D);
++        var5.draw();
++    }
++    GL11.glEnable(GL11.GL_TEXTURE_2D);
++}
+ }
 --- /dev/null
 +++ net/minecraft/src/EntityLongVirusMan.java
 @@ -1,0 +1,34 @@
@@ -3722,6 +4942,52 @@
  
  	}
  
+--- net/minecraft/src/LoadingScreenRenderer.java
++++ net/minecraft/src/LoadingScreenRenderer.java
+@@ -77,16 +77,33 @@
+ 				GL11.glTranslatef(0.0F, 0.0F, -200.0F);
+ 				GL11.glClear(GL11.GL_DEPTH_BUFFER_BIT | GL11.GL_COLOR_BUFFER_BIT);
+ 				Tessellator var7 = Tessellator.instance;
+-				int var8 = this.mc.renderEngine.getTexture("/gui/background.png");
+-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, var8);
+-				float var9 = 32.0F;
+-				var7.startDrawingQuads();
+-				var7.setColorOpaque_I(4210752);
+-				var7.addVertexWithUV(0.0D, (double)var6, 0.0D, 0.0D, (double)((float)var6 / var9));
+-				var7.addVertexWithUV((double)var5, (double)var6, 0.0D, (double)((float)var5 / var9), (double)((float)var6 / var9));
+-				var7.addVertexWithUV((double)var5, 0.0D, 0.0D, (double)((float)var5 / var9), 0.0D);
+-				var7.addVertexWithUV(0.0D, 0.0D, 0.0D, 0.0D, 0.0D);
+-				var7.draw();
++				// REPLACE the section that binds background.png and draws the large quad:
++GL11.glDisable(GL11.GL_TEXTURE_2D);
++java.util.Random rand = new java.util.Random();
++for (int i = 0; i < 500; ++i) {
++    int x = rand.nextInt(var5 + 100) - 50;
++    int y = rand.nextInt(var6 + 100) - 50;
++    int w = rand.nextInt(80) + 20;
++    int h = rand.nextInt(12) + 4;
++
++    if (rand.nextBoolean()) {
++        GL11.glEnable(GL11.GL_TEXTURE_2D);
++        GL11.glBindTexture(GL11.GL_TEXTURE_2D, this.mc.renderEngine.getTexture("/terrain.png"));
++    } else {
++        GL11.glDisable(GL11.GL_TEXTURE_2D);
++    }
++
++    int col = (rand.nextInt(200) + 55 << 24) | (rand.nextInt(256) << 16) | (rand.nextInt(256) << 8) | rand.nextInt(256);
++    
++    var7.startDrawingQuads();
++    var7.setColorRGBA_I(col & 0xFFFFFF, (col >> 24) & 0xFF);
++    var7.addVertex((double)x, (double)(y + h), 0.0D);
++    var7.addVertex((double)(x + w), (double)(y + h), 0.0D);
++    var7.addVertex((double)(x + w), (double)y, 0.0D);
++    var7.addVertex((double)x, (double)y, 0.0D);
++    var7.draw();
++}
++GL11.glEnable(GL11.GL_TEXTURE_2D);
+ 				if(var1 >= 0) {
+ 					byte var10 = 100;
+ 					byte var11 = 2;
 --- net/minecraft/src/BlockCactus.java
 +++ net/minecraft/src/BlockCactus.java
 @@ -9,22 +9,23 @@
