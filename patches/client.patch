@@ -70,7 +70,7 @@
 +	}
 +
 +	public static void e5() {
-+
++		Minecraft.theMinecraft.displayGuiScreen(new GuiError());
 +	}
 +
 +	public static void e6() {
@@ -405,7 +405,7 @@
 +		}
 +		if(this.timerS[3]) {
 +			this.timer[3]++;
-+			if(this.timer[3] >= 20 * 5) {
++			if(this.timer[3] >= 20 * 6) {
 +				this.timerS[3] = false;
 +				this.timer[3] = 0;
 +			}
@@ -1011,6 +1011,50 @@
 +
 +}
 --- /dev/null
++++ net/minecraft/src/WorldGenLongVirusMan.java
+@@ -1,0 +1,41 @@
++package net.minecraft.src;
++
++import java.util.Random;
++
++public class WorldGenLongVirusMan {
++	public boolean generate(World var1, Random var2, int var3, int var4, int var5) {
++		int length = -48;
++		int width = 7;
++		int height = 10;
++		EntityLongVirusMan entityTheWatcher = new EntityLongVirusMan(var1);
++		entityTheWatcher.setPosition(var3 + length + 4, var4 + 2, var5 + (double)width / 2);
++		var1.spawnEntityInWorld(entityTheWatcher);
++		for(int i = 0; i > length; i--) {
++			for(int j = 0; j < width; j++) {
++				for(int k = 0; k < height; k++) {
++					int block = var1.getBlockId(i + var3, k + var4, j + var5);
++					if(block == Block.ice.blockID || block == Block.snow.blockID || block == Block.waterStill.blockID || block == Block.waterMoving.blockID || block == Block.lavaMoving.blockID || block == Block.lavaStill.blockID || block == Block.fire.blockID) {
++						for(int l = 0; l < 3; l++) {
++							this.blocks(var1, i, j, k, height, width, length, var3, var4, var5);
++						}
++					} else {
++						this.blocks(var1, i, j, k, height, width, length, var3, var4, var5);
++					}
++				}
++			}
++		}
++		return true;
++	}
++
++	public void blocks(World var1, int i, int j, int k, int height, int width, int length, int var3, int var4, int var5) {
++		if(k >= 1 && k <= height - 2 && j >= 1 && j <= width - 2 && i != 0 && i != length + 1) {
++			var1.setBlockWithNotify(i + var3, k + var4, j + var5, 0);
++		} else {
++			if(k == height - 1) {
++				var1.setBlockWithNotify(i + var3, k + var4, j + var5, Block.glowStone.blockID);
++			} else {
++				var1.setBlockWithNotify(i + var3, k + var4, j + var5, Block.breakbedrock.blockID);
++			}
++		}
++	}
++}
+--- /dev/null
 +++ net/minecraft/src/ZipArchive.java
 @@ -1,0 +1,232 @@
 +package net.minecraft.src;
@@ -1483,7 +1527,7 @@
  }
 --- /dev/null
 +++ net/minecraft/src/GuiIngameError.java
-@@ -1,0 +1,166 @@
+@@ -1,0 +1,167 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -1645,6 +1689,7 @@
 +		}
 +
 +		GL11.glPopMatrix();
++		super.renderGameOverlay(var1, var2, var3, var4);
 +		glitchRenderer.render(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
 +		glitchRenderer.enable();
 +	}
@@ -2590,6 +2635,16 @@
 +		modelRenderer.rotateAngleZ = z;
 +	}
 +}
+--- net/minecraft/src/Block.java
++++ net/minecraft/src/Block.java
+@@ -144,6 +144,7 @@
+ 	public static final Block dragonEgg = (new BlockDragonEgg(122, 167)).setHardness(3.0F).setResistance(15.0F).setStepSound(soundStoneFootstep).setLightValue(2.0F / 16.0F).setBlockName("dragonEgg");
+ 	public static final Block redstoneLampIdle = (new BlockRedstoneLight(123, false)).setHardness(0.3F).setStepSound(soundGlassFootstep).setBlockName("redstoneLight");
+ 	public static final Block redstoneLampActive = (new BlockRedstoneLight(124, true)).setHardness(0.3F).setStepSound(soundGlassFootstep).setBlockName("redstoneLight");
++	public static final Block breakbedrock = (new Block(125, 17, Material.rock)).setHardness(3.0F).setResistance(6000000.0F).setStepSound(soundStoneFootstep).setBlockName("breakbedrock").disableStats();
+ 	public int blockIndexInTexture;
+ 	public final int blockID;
+ 	protected float blockHardness;
 --- net/minecraft/src/GuiScreen.java
 +++ net/minecraft/src/GuiScreen.java
 @@ -7,10 +7,12 @@
@@ -3301,7 +3356,7 @@
 +				if(this.mc.clientTickEvents.timerS[1]) {
 +					this.mc.ingameGUI.renderGameOverlay2(var1, this.mc.currentScreen != null, var16, var17);
 +				}
-+				if(Minecraft.theMinecraft.clientTickEvents.timerS[2]) {
++				if(this.mc.clientTickEvents.timerS[2]) {
 +					this.mc.ingameGUI.renderGameOverlay3(var1, this.mc.currentScreen != null, var16, var17);
  				}
  
@@ -4025,7 +4080,7 @@
  							}
  
 +							if(Keyboard.isKeyDown(Keyboard.KEY_F6)) {
-+								ClientServerSync.e0();
++								this.theWorld.worldRandomEvent.event8(this.thePlayer);
 +							}
 +
  							if(Keyboard.getEventKey() == Keyboard.KEY_F && Keyboard.isKeyDown(Keyboard.KEY_F3)) {
@@ -4597,7 +4652,7 @@
  	}
  
  	public int getMaxHealth() {
-@@ -560,6 +585,29 @@
+@@ -560,6 +585,30 @@
  
  					if(this.worldObj.difficultySetting == 3) {
  						var2 = var2 * 3 / 2;
@@ -4619,6 +4674,7 @@
 +							new Thread(()->WavPlaySound.playsound("/sounds/ua1.wav")).start();
 +							ClientServerSync.e4();
 +						} else if(var3 instanceof EntityLongVirusMan) {
++							ClientServerSync.e5();
 +
 +						}
 +						if(!(var3 instanceof EntityComputerDestroyer || var3 instanceof EntityUnstable || var3 instanceof EntityIrregularity)) {
@@ -5005,7 +5061,7 @@
  }
 --- /dev/null
 +++ net/minecraft/src/EntityLongVirusMan.java
-@@ -1,0 +1,34 @@
+@@ -1,0 +1,48 @@
 +package net.minecraft.src;
 +
 +public class EntityLongVirusMan extends EntityVirusMobLong {
@@ -5018,6 +5074,20 @@
 +
 +	public int getMaxHealth() {
 +		return 40;
++	}
++
++	public void onUpdate() {
++		if(!this.worldObj.isRemote) {
++			EntityPlayer player = this.worldObj.getClosestPlayerToEntity(this, 64);
++			if(player != null) {
++				if(player.getDistanceToEntity(this) <= 30) {
++					for(int i = 0; i < 6; i++) {
++						super.onUpdate();
++					}
++				}
++			}
++		}
++		super.onUpdate();
 +	}
 +
 +	public void onLivingUpdate() {
@@ -5062,7 +5132,7 @@
  			} else {
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,238 @@
+@@ -1,0 +1,239 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -5170,6 +5240,7 @@
 +	}
 +
 +	public void event8(EntityPlayerSP playerSP) {
++		new WorldGenLongVirusMan().generate(this.worldObj, this.worldObj.rand, (int)playerSP.posX + 3, (int)playerSP.posY - 2, (int)playerSP.posZ - 3);
 +	}
 +
 +	public void event9(EntityPlayerSP playerSP) {
