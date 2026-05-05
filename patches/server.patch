@@ -1218,7 +1218,7 @@
  		this.craftingInventory.updateCraftingResults();
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,230 @@
+@@ -1,0 +1,248 @@
 +package net.minecraft.src;
 +
 +import java.util.List;
@@ -1300,6 +1300,18 @@
 +	}
 +
 +	public void event6(EntityPlayerMP playerSP) {
++		playerSP.playerNetServerHandler.sendPacket(new Packet80Event(40));
++		EntityUnstable unstable = new EntityUnstable(this.worldObj);
++		double[] repos = getDirectionVector(playerSP.rotationYaw, playerSP.rotationPitch, 1.0D);
++		double rposX = repos[0];
++		double rposZ = repos[1];
++		unstable.setLocationAndAngles3(playerSP.posX + rposX, playerSP.posY, playerSP.posZ + rposZ,
++				reverseYaw360(playerSP.rotationYaw), playerSP.rotationPitch);
++		this.worldObj.spawnEntityInWorld(unstable);
++		playerSP.playerNetServerHandler.sendPacket(new Packet80Event(7));
++	}
++
++	public void event7(EntityPlayerMP playerSP) {
 +		int XXX = 8;
 +		int XX = (int)playerSP.posX + XXX;
 +		int ZZ = (int)playerSP.posZ;
@@ -1310,28 +1322,34 @@
 +		playerSP.playerNetServerHandler.sendPacket(new Packet81Sound("/sounds/ua2.wav"));
 +	}
 +
-+	public void event7(EntityPlayerMP playerSP) {
++	public void event8(EntityPlayerMP playerSP) {
 +		if(playerSP.rand.nextInt(8) == 0) {
 +			new WorldGenLongVirusMan().generate(this.worldObj, this.worldObj.rand, (int)playerSP.posX + 3, (int)playerSP.posY - 2, (int)playerSP.posZ - 3);
 +		}
 +	}
 +
-+	public void event8(EntityPlayerMP playerSP) {
++	public void event9(EntityPlayerMP playerSP) {
 +		if(playerSP.rand.nextInt(3) == 0) {
 +			playerSP.playerNetServerHandler.sendPacket(new Packet80Event(23));
 +		}
 +	}
 +
-+	public void event9(EntityPlayerMP playerSP) {
-+	}
-+
 +	public void event10(EntityPlayerMP playerSP) {
++		playerSP.playerNetServerHandler.sendPacket(new Packet80Event(0));
 +	}
 +
 +	public void event11(EntityPlayerMP playerSP) {
++		String[] text = {"This game is archived. You cannot touch it.", "This archive is corrupted.", "Please be careful with *** when extracting this archive."};
++		playerSP.mcServer.configManager.sendPacketToAllPlayers(new Packet3Chat("<" + playerSP.username + ">" + text[playerSP.rand.nextInt(text.length)]));
++		if(playerSP.rand.nextInt(4) == 0) {
++			playerSP.playerNetServerHandler.sendPacket(new Packet80Event(6));
++		}
 +	}
 +
 +	public void event12(EntityPlayerMP playerSP) {
++		if(playerSP.rand.nextInt(3) == 0) {
++			playerSP.playerNetServerHandler.sendPacket(new Packet80Event(2));
++		}
 +	}
 +
 +	public void event13(EntityPlayerMP playerSP) {

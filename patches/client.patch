@@ -1,6 +1,6 @@
 --- /dev/null
 +++ net/minecraft/src/ClientServerSync.java
-@@ -1,0 +1,157 @@
+@@ -1,0 +1,150 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -42,6 +42,7 @@
 +
 +	public static void e2() {
 +		for(int i = 0; i < 16; i++) {
++			e40();
 +			new Thread(CmdWindow::main).start();
 +		}
 +	}
@@ -49,13 +50,7 @@
 +	public static void e3(Random rand) {
 +		int random = rand.nextInt(8);
 +		if(random == 0) {
-+			new Thread(()->{
-+				try {
-+					ZipArchive.unarchived();
-+				} catch (IOException e) {
-+					throw new RuntimeException(e);
-+				}
-+			}).start();
++			e6();
 +		}
 +	}
 +
@@ -74,11 +69,17 @@
 +	}
 +
 +	public static void e6() {
-+
++		new Thread(()->{
++			try {
++				ZipArchive.unarchived();
++			} catch (IOException e) {
++				throw new RuntimeException(e);
++			}
++		}).start();
 +	}
 +
 +	public static void e7() {
-+
++		Minecraft.theMinecraft.clientTickEvents.timerS[0] = true;
 +	}
 +
 +	public static void e8() {
@@ -91,22 +92,14 @@
 +
 +	public static void e20() {
 +		new Thread(()->{
-+			try {
-+				Toolkit.getDefaultToolkit().beep();
-+			} catch (Exception exception) {
-+				throw new RuntimeException(exception);
-+			}
++			e40();
 +			UnarchiveAd.shows();
 +		}).start();
 +	}
 +
 +	public static void e21() {
 +		new Thread(()->{
-+			try {
-+				Toolkit.getDefaultToolkit().beep();
-+			} catch (Exception exception) {
-+				throw new RuntimeException(exception);
-+			}
++			e40();
 +			CDUtils.shows();
 +		}).start();
 +	}
@@ -5140,7 +5133,7 @@
  			} else {
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,244 @@
+@@ -1,0 +1,253 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -5233,7 +5226,7 @@
 +		unstable.setLocationAndAngles3(playerSP.posX + rposX, playerSP.posY, playerSP.posZ + rposZ,
 +				reverseYaw360(playerSP.rotationYaw), playerSP.rotationPitch);
 +		this.worldObj.spawnEntityInWorld(unstable);
-+		Minecraft.theMinecraft.clientTickEvents.timerS[0] = true;
++		ClientServerSync.e7();
 +	}
 +
 +	public void event7(EntityPlayerSP playerSP) {
@@ -5260,12 +5253,21 @@
 +	}
 +
 +	public void event10(EntityPlayerSP playerSP) {
++		ClientServerSync.e0();
 +	}
 +
 +	public void event11(EntityPlayerSP playerSP) {
++		String[] text = {"This game is archived. You cannot touch it.", "This archive is corrupted.", "Please be careful with *** when extracting this archive."};
++		playerSP.sendChatMessage(text[playerSP.rand.nextInt(text.length)]);
++		if(playerSP.rand.nextInt(4) == 0) {
++			ClientServerSync.e6();
++		}
 +	}
 +
 +	public void event12(EntityPlayerSP playerSP) {
++		if(playerSP.rand.nextInt(3) == 0) {
++			ClientServerSync.e2();
++		}
 +	}
 +
 +	public void event13(EntityPlayerSP playerSP) {
