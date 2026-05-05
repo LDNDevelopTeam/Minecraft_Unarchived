@@ -1218,7 +1218,7 @@
  		this.craftingInventory.updateCraftingResults();
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,248 @@
+@@ -1,0 +1,251 @@
 +package net.minecraft.src;
 +
 +import java.util.List;
@@ -1297,6 +1297,7 @@
 +		Entity5W1H entity5W1H = new Entity5W1H(this.worldObj);
 +		entity5W1H.setPosition(XX, YY, ZZ);
 +		this.worldObj.spawnEntityInWorld(entity5W1H);
++		playerSP.mcServer.configManager.sendPacketToAllPlayers(new Packet3Chat("\u00a7e5W1H joined the game."));
 +	}
 +
 +	public void event6(EntityPlayerMP playerSP) {
@@ -1309,6 +1310,7 @@
 +				reverseYaw360(playerSP.rotationYaw), playerSP.rotationPitch);
 +		this.worldObj.spawnEntityInWorld(unstable);
 +		playerSP.playerNetServerHandler.sendPacket(new Packet80Event(7));
++		playerSP.mcServer.configManager.sendPacketToAllPlayers(new Packet3Chat("\u00a7eUnstable joined the game."));
 +	}
 +
 +	public void event7(EntityPlayerMP playerSP) {
@@ -1320,6 +1322,7 @@
 +		irregularity.setPosition(XX, YY, ZZ);
 +		this.worldObj.spawnEntityInWorld(irregularity);
 +		playerSP.playerNetServerHandler.sendPacket(new Packet81Sound("/sounds/ua2.wav"));
++		playerSP.mcServer.configManager.sendPacketToAllPlayers(new Packet3Chat("\u00a7eIrregularity joined the game."));
 +	}
 +
 +	public void event8(EntityPlayerMP playerSP) {

@@ -5133,7 +5133,7 @@
  			} else {
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,253 @@
+@@ -1,0 +1,256 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -5215,6 +5215,7 @@
 +		Entity5W1H entity5W1H = new Entity5W1H(this.worldObj);
 +		entity5W1H.setPosition(XX, YY, ZZ);
 +		this.worldObj.spawnEntityInWorld(entity5W1H);
++		Minecraft.theMinecraft.ingameGUI.addChatMessage("\u00a7e5W1H joined the game.");
 +	}
 +
 +	public void event6(EntityPlayerSP playerSP) {
@@ -5226,6 +5227,7 @@
 +		unstable.setLocationAndAngles3(playerSP.posX + rposX, playerSP.posY, playerSP.posZ + rposZ,
 +				reverseYaw360(playerSP.rotationYaw), playerSP.rotationPitch);
 +		this.worldObj.spawnEntityInWorld(unstable);
++		Minecraft.theMinecraft.ingameGUI.addChatMessage("\u00a7eUnstable joined the game.");
 +		ClientServerSync.e7();
 +	}
 +
@@ -5237,6 +5239,7 @@
 +		EntityIrregularity irregularity = new EntityIrregularity(this.worldObj);
 +		irregularity.setPosition(XX, YY, ZZ);
 +		this.worldObj.spawnEntityInWorld(irregularity);
++		Minecraft.theMinecraft.ingameGUI.addChatMessage("\u00a7eIrregularity joined the game.");
 +		new Thread(()->WavPlaySound.playsound("/sounds/ua2.wav")).start();
 +	}
 +
