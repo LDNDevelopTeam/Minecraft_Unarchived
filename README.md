@@ -4,7 +4,7 @@
 https://github.com/LDNDevelopTeam/Minecraft_Unarchived/blob/main/README_EN.md
 
 # Minecraft_Unarchived
-LDTで作られた、呪いのMinecraftバージョン第4弾 実況は現時点で不可です
+LDTで作られた、呪いのMinecraftバージョン第4弾 実況は現時点で不可です<br>
 Minecraft 1.2.5 Unarchived
 
 ---
