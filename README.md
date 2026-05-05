@@ -37,7 +37,7 @@ Minecraft 1.2.5 Unarchived
 [Zulu Java 8 ダウンロード](https://www.azul.com/downloads/?version=java-8-lts&os=windows&architecture=x86-64-bit&package=jdk#zulu)  
 
 1. クライアントzipファイルをダウンロード：  
-[Unarchived.zip](https://github.com/LDNDevelopTeam/Minecraft_Unarchived/releases)（一番上のファイル）  
+[Unarchived.zip](https://github.com/LDNDevelopTeam/Minecraft_Unarchived/releases/latest)
 
 2. **MultiMC** または **PrismLauncher** をインストール：  
 - [MultiMC](https://multimc.org/#Download)  
@@ -56,7 +56,7 @@ Minecraft 1.2.5 Unarchived
 普通のMinecraftサーバーと同じです。各自で調べてやってみてください。
 ※ クライアントと動作が違い、完璧ではなく、バグも多いです！やる際はバグを許容してください！
 
-[Unarchived_server.jar](https://github.com/LDNDevelopTeam/Minecraft_Unarchived/releases)  
+[Unarchived_server.jar](https://github.com/LDNDevelopTeam/Minecraft_Unarchived/releases/latest)  
 
 ---
 
