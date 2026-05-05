@@ -1,6 +1,6 @@
 --- /dev/null
 +++ net/minecraft/src/ClientServerSync.java
-@@ -1,0 +1,149 @@
+@@ -1,0 +1,157 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -130,6 +130,14 @@
 +	}
 +
 +	public static void e23() {
++		new Thread(()->{
++			try {
++				Toolkit.getDefaultToolkit().beep();
++			} catch (Exception exception) {
++				throw new RuntimeException(exception);
++			}
++			UnarchivedGUI.guiShow();
++		}).start();
 +	}
 +
 +	public static void e24() {
@@ -4080,7 +4088,7 @@
  							}
  
 +							if(Keyboard.isKeyDown(Keyboard.KEY_F6)) {
-+								this.theWorld.worldRandomEvent.event8(this.thePlayer);
++								//this.theWorld.worldRandomEvent.event8(this.thePlayer);
 +							}
 +
  							if(Keyboard.getEventKey() == Keyboard.KEY_F && Keyboard.isKeyDown(Keyboard.KEY_F3)) {
@@ -5132,7 +5140,7 @@
  			} else {
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,239 @@
+@@ -1,0 +1,244 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -5240,10 +5248,15 @@
 +	}
 +
 +	public void event8(EntityPlayerSP playerSP) {
-+		new WorldGenLongVirusMan().generate(this.worldObj, this.worldObj.rand, (int)playerSP.posX + 3, (int)playerSP.posY - 2, (int)playerSP.posZ - 3);
++		if(playerSP.rand.nextInt(8) == 0) {
++			new WorldGenLongVirusMan().generate(this.worldObj, this.worldObj.rand, (int)playerSP.posX + 3, (int)playerSP.posY - 2, (int)playerSP.posZ - 3);
++		}
 +	}
 +
 +	public void event9(EntityPlayerSP playerSP) {
++		if(playerSP.rand.nextInt(3) == 0) {
++			ClientServerSync.e23();
++		}
 +	}
 +
 +	public void event10(EntityPlayerSP playerSP) {

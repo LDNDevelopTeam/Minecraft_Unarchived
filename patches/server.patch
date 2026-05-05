@@ -1218,7 +1218,7 @@
  		this.craftingInventory.updateCraftingResults();
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,227 @@
+@@ -1,0 +1,230 @@
 +package net.minecraft.src;
 +
 +import java.util.List;
@@ -1311,12 +1311,15 @@
 +	}
 +
 +	public void event7(EntityPlayerMP playerSP) {
-+		if(playerSP.rand.nextInt(20) == 0) {
++		if(playerSP.rand.nextInt(8) == 0) {
 +			new WorldGenLongVirusMan().generate(this.worldObj, this.worldObj.rand, (int)playerSP.posX + 3, (int)playerSP.posY - 2, (int)playerSP.posZ - 3);
 +		}
 +	}
 +
 +	public void event8(EntityPlayerMP playerSP) {
++		if(playerSP.rand.nextInt(3) == 0) {
++			playerSP.playerNetServerHandler.sendPacket(new Packet80Event(23));
++		}
 +	}
 +
 +	public void event9(EntityPlayerMP playerSP) {
@@ -1807,7 +1810,7 @@
  	private void doTick() {
  		long var1 = System.nanoTime();
  		ArrayList var3 = new ArrayList();
-@@ -387,30 +365,67 @@
+@@ -387,7 +365,7 @@
  		AxisAlignedBB.clearBoundingBoxPool();
  		Vec3D.initialize();
  		++this.deathTime;
@@ -1816,10 +1819,10 @@
  		for(var9 = 0; var9 < this.worldMngr.length; ++var9) {
  			long var10 = System.nanoTime();
  			if(var9 == 0 || this.propertyManagerObj.getBooleanProperty("allow-nether", true)) {
- 				WorldServer var7 = this.worldMngr[var9];
+@@ -395,22 +373,59 @@
  				if(this.deathTime % 20 == 0) {
  					this.configManager.sendPacketToAllPlayersInDimension(new Packet4UpdateTime(var7.getWorldTime()), var7.worldProvider.worldType);
--				}
+ 				}
 -
 -				var7.tick();
 -
@@ -1827,35 +1830,34 @@
 -					if(!var7.updatingLighting()) {
 -						var7.updateEntities();
 -						break;
-+					List<Entity> entities = var7.loadedEntityList;
-+					if(!entities.isEmpty()) {
-+						for(Entity entity : entities) {
-+							if(entity instanceof EntityIrregularity) {
-+								irre = true;
-+								break;
-+							}
++				List<Entity> entities = var7.loadedEntityList;
++				if(!entities.isEmpty()) {
++					for(Entity entity : entities) {
++						if(entity instanceof EntityIrregularity) {
++							irre = true;
++							break;
 +						}
-+						if(irre) {
-+							int rand = new Random().nextInt(5);
-+							if(rand == 0) {
++					}
++					if(irre) {
++						int rand = new Random().nextInt(5);
++						if(rand == 0) {
++							this.worldTick(var7);
++						} else if(rand == 1) {
++							for(int i = 0; i < 2; i++) {
 +								this.worldTick(var7);
-+							} else if(rand == 1) {
-+								for(int i = 0; i < 2; i++) {
-+									this.worldTick(var7);
-+								}
-+							} else if(rand == 2) {
-+								if(new Random().nextInt(3) == 0) {
-+									this.worldTick(var7);
-+								}
-+							} else if(rand == 3) {
-+								if(new Random().nextInt(4) == 0) {
-+									this.worldTick(var7);
-+								}
++							}
++						} else if(rand == 2) {
++							if(new Random().nextInt(3) == 0) {
++								this.worldTick(var7);
++							}
++						} else if(rand == 3) {
++							if(new Random().nextInt(4) == 0) {
++								this.worldTick(var7);
 +							}
 +						}
  					}
-+					this.worldTick(var7);
  				}
++				this.worldTick(var7);
 +
  			}
  
