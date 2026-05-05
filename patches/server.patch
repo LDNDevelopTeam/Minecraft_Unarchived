@@ -889,11 +889,11 @@
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityPig.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityChicken.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityCow.class, 8, 4, 4));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityGlitchVirusMan.class, 8, 1, 1));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityErrorMob.class, 8, 4, 4));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityWorldArchiveMan.class, 8, 1, 1));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityVirusMan.class, 8, 1, 1));
-+		this.spawnableCreatureList.add(new SpawnListEntry(EntityThatVirus.class, 8, 4, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityGlitchVirusMan.class, 6, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityErrorMob.class, 4, 4, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityWorldArchiveMan.class, 6, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityVirusMan.class, 6, 1, 1));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityThatVirus.class, 6, 1, 1));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySpider.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntityZombie.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySkeleton.class, 10, 4, 4));
