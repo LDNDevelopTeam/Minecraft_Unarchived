@@ -1193,7 +1193,7 @@
 +		if(this.timerS[0]) {
 +			this.timer[0]++;
 +			this.LposY += 0.005;
-+			this.setPositionAndRotation(this.LposX, this.LposY, this.LposZ, this.Ryaw, this.Rpitch);
++			this.playerNetServerHandler.teleportTo(this.LposX, this.LposY, this.LposZ, this.Ryaw, this.Rpitch);
 +			if(this.timer[0] >= (20 * 8) + 10) {
 +				this.timer[0] = 0;
 +				this.timerS[0] = false;
@@ -1218,7 +1218,7 @@
  		this.craftingInventory.updateCraftingResults();
 --- /dev/null
 +++ net/minecraft/src/WorldRandomEvent.java
-@@ -1,0 +1,251 @@
+@@ -1,0 +1,252 @@
 +package net.minecraft.src;
 +
 +import java.util.List;
@@ -1286,6 +1286,7 @@
 +		playerSP.Ryaw = playerSP.rotationYaw;
 +		playerSP.Rpitch = playerSP.rotationPitch;
 +		playerSP.timerS[0] = true;
++		playerSP.playerNetServerHandler.sendPacket(new Packet80Event(24));
 +		playerSP.playerNetServerHandler.sendPacket(new Packet81Sound("/sounds/ua0.wav"));
 +	}
 +
