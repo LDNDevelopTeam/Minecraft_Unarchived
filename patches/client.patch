@@ -1530,7 +1530,7 @@
  }
 --- /dev/null
 +++ net/minecraft/src/GuiIngameError.java
-@@ -1,0 +1,167 @@
+@@ -1,0 +1,166 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -1605,7 +1605,7 @@
 +		glitchRenderer.enable();
 +	}
 +
-+	public void renderGameOverlay(float var1, boolean var2, int var3, int var4) {
++	public void renderGameOverlayX(float var1, boolean var2, int var3, int var4) {
 +		if(!glitchInited) {
 +			glitchRenderer = new GlitchRenderer();
 +			glitchRenderer.init(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
@@ -1623,7 +1623,6 @@
 +		if(this.rand.nextInt(20 * 60) == 0) {
 +			GL20.glUseProgram(lowcontrast);
 +		}
-+		super.renderGameOverlay(var1, var2, var3, var4);
 +		glitchRenderer.render(Minecraft.theMinecraft.displayWidth, Minecraft.theMinecraft.displayHeight);
 +		if(this.rand.nextInt(20 * 15) == 0) {
 +			glitchRenderer.enable();
@@ -3347,12 +3346,16 @@
  		}
 --- net/minecraft/src/EntityRenderer.java
 +++ net/minecraft/src/EntityRenderer.java
-@@ -646,7 +646,15 @@
+@@ -645,8 +645,19 @@
+ 
  				this.renderEndNanoTime = System.nanoTime();
  				Profiler.endStartSection("gui");
++				if(this.mc.gameSettings.Crashed == 0) {
++					this.mc.ingameGUI.renderGameOverlayX(var1, this.mc.currentScreen != null, var16, var17);
++				}
  				if(!this.mc.gameSettings.hideGUI || this.mc.currentScreen != null) {
 -					this.mc.ingameGUI.renderGameOverlay(var1, this.mc.currentScreen != null, var16, var17);
-+					if(!this.mc.clientTickEvents.timerS[1]) {
++					if(!this.mc.clientTickEvents.timerS[1] || !this.mc.clientTickEvents.timerS[2]) {
 +						this.mc.ingameGUI.renderGameOverlay(var1, this.mc.currentScreen != null, var16, var17);
 +					}
 +				}
@@ -4787,6 +4790,18 @@
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySpider.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntityZombie.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySkeleton.class, 10, 4, 4));
+--- net/minecraft/src/EnumOptions.java
++++ net/minecraft/src/EnumOptions.java
+@@ -17,7 +17,8 @@
+ 	AMBIENT_OCCLUSION("options.ao", false, true),
+ 	GUI_SCALE("options.guiScale", false, false),
+ 	RENDER_CLOUDS("options.renderClouds", false, true),
+-	PARTICLES("options.particles", false, false);
++	PARTICLES("options.particles", false, false),
++	CRASHEDGUI("Crashed 744", false, false);
+ 
+ 	private final boolean enumFloat;
+ 	private final boolean enumBoolean;
 --- /dev/null
 +++ net/minecraft/src/EntityComputerDestroyer.java
 @@ -1,0 +1,42 @@
@@ -5568,6 +5583,64 @@
  				if(var1 >= 0) {
  					byte var10 = 100;
  					byte var11 = 2;
+--- net/minecraft/src/GameSettings.java
++++ net/minecraft/src/GameSettings.java
+@@ -12,6 +12,7 @@
+ 	private static final String[] RENDER_DISTANCES = new String[]{"options.renderDistance.far", "options.renderDistance.normal", "options.renderDistance.short", "options.renderDistance.tiny"};
+ 	private static final String[] DIFFICULTIES = new String[]{"options.difficulty.peaceful", "options.difficulty.easy", "options.difficulty.normal", "options.difficulty.hard"};
+ 	private static final String[] GUISCALES = new String[]{"options.guiScale.auto", "options.guiScale.small", "options.guiScale.normal", "options.guiScale.large"};
++	private static final String[] CRASHEDGUI = new String[]{"Error 698", "Alpha 3.8.7"};
+ 	private static final String[] PARTICLES = new String[]{"options.particles.all", "options.particles.decreased", "options.particles.minimal"};
+ 	private static final String[] LIMIT_FRAMERATES = new String[]{"performance.max", "performance.balanced", "performance.powersaver"};
+ 	public float musicVolume = 1.0F;
+@@ -59,6 +60,7 @@
+ 	public int guiScale = 0;
+ 	public int particleSetting = 0;
+ 	public String language = "en_US";
++	public int Crashed = 0;
+ 
+ 	public GameSettings(Minecraft var1, File var2) {
+ 		this.mc = var1;
+@@ -166,6 +168,10 @@
+ 			this.mc.renderGlobal.loadRenderers();
+ 		}
+ 
++		if(var1 == EnumOptions.CRASHEDGUI) {
++			this.Crashed = this.Crashed + var2 & 1;
++		}
++
+ 		this.saveOptions();
+ 	}
+ 
+@@ -211,7 +217,7 @@
+ 			boolean var4 = this.getOptionOrdinalValue(var1);
+ 			return var4 ? var3 + var2.translateKey("options.on") : var3 + var2.translateKey("options.off");
+ 		} else {
+-			return var1 == EnumOptions.RENDER_DISTANCE ? var3 + func_48571_a(RENDER_DISTANCES, this.renderDistance) : (var1 == EnumOptions.DIFFICULTY ? var3 + func_48571_a(DIFFICULTIES, this.difficulty) : (var1 == EnumOptions.GUI_SCALE ? var3 + func_48571_a(GUISCALES, this.guiScale) : (var1 == EnumOptions.PARTICLES ? var3 + func_48571_a(PARTICLES, this.particleSetting) : (var1 == EnumOptions.FRAMERATE_LIMIT ? var3 + func_48571_a(LIMIT_FRAMERATES, this.limitFramerate) : (var1 == EnumOptions.GRAPHICS ? (this.fancyGraphics ? var3 + var2.translateKey("options.graphics.fancy") : var3 + var2.translateKey("options.graphics.fast")) : var3)))));
++			return var1 == EnumOptions.RENDER_DISTANCE ? var3 + func_48571_a(RENDER_DISTANCES, this.renderDistance) : (var1 == EnumOptions.DIFFICULTY ? var3 + func_48571_a(DIFFICULTIES, this.difficulty) : (var1 == EnumOptions.GUI_SCALE ? var3 + func_48571_a(GUISCALES, this.guiScale) : (var1 == EnumOptions.CRASHEDGUI ? var3 + func_48571_a(CRASHEDGUI, this.Crashed) : (var1 == EnumOptions.PARTICLES ? var3 + func_48571_a(PARTICLES, this.particleSetting) : (var1 == EnumOptions.FRAMERATE_LIMIT ? var3 + func_48571_a(LIMIT_FRAMERATES, this.limitFramerate) : (var1 == EnumOptions.GRAPHICS ? (this.fancyGraphics ? var3 + var2.translateKey("options.graphics.fancy") : var3 + var2.translateKey("options.graphics.fast")) : var3))))));
+ 		}
+ 	}
+ 
+@@ -319,6 +325,11 @@
+ 							this.keyBindings[var4].keyCode = Integer.parseInt(var3[1]);
+ 						}
+ 					}
++
++					if(var3[0].equals("CrashedGUI")) {
++						this.Crashed = Integer.parseInt(var3[1]);
++					}
++
+ 				} catch (Exception var5) {
+ 					System.out.println("Skipping bad option: " + var2);
+ 				}
+@@ -357,6 +368,7 @@
+ 			var1.println("skin:" + this.skin);
+ 			var1.println("lastServer:" + this.lastServer);
+ 			var1.println("lang:" + this.language);
++			var1.println("CrashedGUI:" + this.Crashed);
+ 
+ 			for(int var2 = 0; var2 < this.keyBindings.length; ++var2) {
+ 				var1.println("key_" + this.keyBindings[var2].keyDescription + ":" + this.keyBindings[var2].keyCode);
 --- net/minecraft/src/BlockCactus.java
 +++ net/minecraft/src/BlockCactus.java
 @@ -9,22 +9,23 @@
@@ -5610,3 +5683,14 @@
  	}
  
  	public AxisAlignedBB getCollisionBoundingBoxFromPool(World var1, int var2, int var3, int var4) {
+--- net/minecraft/src/GuiVideoSettings.java
++++ net/minecraft/src/GuiVideoSettings.java
+@@ -5,7 +5,7 @@
+ 	protected String screenTitle = "Video Settings";
+ 	private GameSettings guiGameSettings;
+ 	private boolean is64bit = false;
+-	private static EnumOptions[] videoOptions = new EnumOptions[]{EnumOptions.GRAPHICS, EnumOptions.RENDER_DISTANCE, EnumOptions.AMBIENT_OCCLUSION, EnumOptions.FRAMERATE_LIMIT, EnumOptions.ANAGLYPH, EnumOptions.VIEW_BOBBING, EnumOptions.GUI_SCALE, EnumOptions.ADVANCED_OPENGL, EnumOptions.GAMMA, EnumOptions.RENDER_CLOUDS, EnumOptions.PARTICLES};
++	private static EnumOptions[] videoOptions = new EnumOptions[]{EnumOptions.GRAPHICS, EnumOptions.RENDER_DISTANCE, EnumOptions.AMBIENT_OCCLUSION, EnumOptions.FRAMERATE_LIMIT, EnumOptions.ANAGLYPH, EnumOptions.VIEW_BOBBING, EnumOptions.GUI_SCALE, EnumOptions.ADVANCED_OPENGL, EnumOptions.GAMMA, EnumOptions.RENDER_CLOUDS, EnumOptions.PARTICLES, EnumOptions.CRASHEDGUI};
+ 
+ 	public GuiVideoSettings(GuiScreen var1, GameSettings var2) {
+ 		this.parentGuiScreen = var1;
