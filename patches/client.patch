@@ -1,6 +1,6 @@
 --- /dev/null
 +++ net/minecraft/src/ClientServerSync.java
-@@ -1,0 +1,152 @@
+@@ -1,0 +1,153 @@
 +package net.minecraft.src;
 +
 +import net.minecraft.client.Minecraft;
@@ -69,6 +69,7 @@
 +	}
 +
 +	public static void e6() {
++		e40();
 +		for(int i = 0; i < 8; i++) {
 +			new Thread(()->{
 +				try {
