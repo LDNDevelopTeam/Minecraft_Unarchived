@@ -1841,7 +1841,7 @@
  		for(var9 = 0; var9 < this.worldMngr.length; ++var9) {
  			long var10 = System.nanoTime();
  			if(var9 == 0 || this.propertyManagerObj.getBooleanProperty("allow-nether", true)) {
-@@ -395,22 +373,59 @@
+@@ -395,21 +373,60 @@
  				if(this.deathTime % 20 == 0) {
  					this.configManager.sendPacketToAllPlayersInDimension(new Packet4UpdateTime(var7.getWorldTime()), var7.worldProvider.worldType);
  				}
@@ -1887,7 +1887,6 @@
  		}
  
  		this.networkServer.handleNetworkListenThread();
--		this.configManager.onTick();
 +		if(irre) {
 +			int rand = new Random().nextInt(5);
 +			if(rand == 0) {
@@ -1906,10 +1905,11 @@
 +				}
 +			}
 +		}
++
+ 		this.configManager.onTick();
  
  		for(var9 = 0; var9 < this.entityTracker.length; ++var9) {
- 			this.entityTracker[var9].updateTrackedEntities();
-@@ -527,7 +542,7 @@
+@@ -527,7 +544,7 @@
  	}
  
  	public String getVersionString() {

@@ -2906,7 +2906,7 @@
  	public void setColorOpaque_I(int var1) {
 --- /dev/null
 +++ net/minecraft/src/LoadSharder.java
-@@ -1,0 +1,67 @@
+@@ -1,0 +1,72 @@
 +package net.minecraft.src;
 +
 +import java.io.BufferedReader;
@@ -2972,6 +2972,11 @@
 +	public static void setUniform(int programID, String name, int value) {
 +		int location = glGetUniformLocation(programID, name);
 +		glUniform1i(location, value);
++	}
++
++	public static void setUniform(int programID, String name, float v0, float v1) {
++		int location = glGetUniformLocation(programID, name);
++		glUniform2f(location, v0, v1);
 +	}
 +}
 --- /dev/null
