@@ -635,7 +635,7 @@
  	public void replaceBlocksForBiome(int var1, int var2, byte[] var3, BiomeGenBase[] var4) {
 --- net/minecraft/src/EntityList.java
 +++ net/minecraft/src/EntityList.java
-@@ -136,5 +136,16 @@
+@@ -136,5 +136,17 @@
  		addMapping(EntityIronGolem.class, "VillagerGolem", 99);
  		addMapping(EntityVillager.class, "Villager", 120, 5651507, 12422002);
  		addMapping(EntityEnderCrystal.class, "EnderCrystal", 200);
@@ -650,8 +650,57 @@
 +		addMapping(EntityUnstable.class, "Unstable", 107);
 +		addMapping(EntityIrregularity.class, "Irregularity", 108);
 +		addMapping(EntityLongVirusMan.class, "LongVirusMan", 109);
++		addMapping(EntityNoName.class, "NoName", 110);
  	}
  }
+--- /dev/null
++++ net/minecraft/src/EntityNoName.java
+@@ -1,0 +1,45 @@
++package net.minecraft.src;
++
++public class EntityNoName extends EntityVirusMob {
++
++	public EntityNoName(World var1) {
++		super(var1);
++		this.texture = "/addmob/noname.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 0;
++	}
++
++	public int getMaxHealth() {
++		return 100;
++	}
++
++	public void onUpdate() {
++		EntityPlayerMP player = (EntityPlayerMP)this.worldObj.getClosestPlayerToEntity(this, 64.0D);
++		if(player != null) {
++			if(this.getDistanceToEntity(player) <= 24.0F) {
++				this.setDead();
++			}
++		}
++		super.onUpdate();
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	public boolean attackEntityFrom(DamageSource var1, int var2) {
++		return false;
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
 --- /dev/null
 +++ net/minecraft/src/Packet80Event.java
 @@ -1,0 +1,32 @@
@@ -885,7 +934,7 @@
 +}
 --- net/minecraft/src/BiomeGenBase.java
 +++ net/minecraft/src/BiomeGenBase.java
-@@ -59,6 +59,11 @@
+@@ -59,6 +59,12 @@
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityPig.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityChicken.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityCow.class, 8, 4, 4));
@@ -894,6 +943,7 @@
 +		this.spawnableCreatureList.add(new SpawnListEntry(EntityWorldArchiveMan.class, 6, 1, 4));
 +		this.spawnableCreatureList.add(new SpawnListEntry(EntityVirusMan.class, 6, 1, 4));
 +		this.spawnableCreatureList.add(new SpawnListEntry(EntityThatVirus.class, 6, 1, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityNoName.class, 12, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySpider.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntityZombie.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySkeleton.class, 10, 4, 4));

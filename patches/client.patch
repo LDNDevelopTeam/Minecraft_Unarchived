@@ -756,7 +756,7 @@
 +}
 --- net/minecraft/src/RenderManager.java
 +++ net/minecraft/src/RenderManager.java
-@@ -70,6 +70,17 @@
+@@ -70,6 +70,18 @@
  		this.entityRenderMap.put(EntityBoat.class, new RenderBoat());
  		this.entityRenderMap.put(EntityFishHook.class, new RenderFish());
  		this.entityRenderMap.put(EntityLightningBolt.class, new RenderLightningBolt());
@@ -771,9 +771,22 @@
 +		this.entityRenderMap.put(EntityUnstable.class, new RenderBiped(new ModelBiped(), 0.5F));
 +		this.entityRenderMap.put(EntityIrregularity.class, new RenderIrregularity());
 +		this.entityRenderMap.put(EntityLongVirusMan.class, new RenderLongVirusMan());
++		this.entityRenderMap.put(EntityNoName.class, new RenderNoName());
  		Iterator var1 = this.entityRenderMap.values().iterator();
  
  		while(var1.hasNext()) {
+--- /dev/null
++++ net/minecraft/src/RenderNoName.java
+@@ -1,0 +1,9 @@
++package net.minecraft.src;
++
++public class RenderNoName extends RenderLiving {
++
++	public RenderNoName() {
++		super(new ModelNoName(0.0F), 0.5F);
++	}
++
++}
 --- /dev/null
 +++ net/minecraft/src/OpenTaskManager.java
 @@ -1,0 +1,13 @@
@@ -1512,7 +1525,7 @@
  	public void replaceBlocksForBiome(int var1, int var2, byte[] var3, BiomeGenBase[] var4) {
 --- net/minecraft/src/EntityList.java
 +++ net/minecraft/src/EntityList.java
-@@ -136,5 +136,16 @@
+@@ -136,5 +136,17 @@
  		addMapping(EntityIronGolem.class, "VillagerGolem", 99);
  		addMapping(EntityVillager.class, "Villager", 120, 5651507, 12422002);
  		addMapping(EntityEnderCrystal.class, "EnderCrystal", 200);
@@ -1527,6 +1540,7 @@
 +		addMapping(EntityUnstable.class, "Unstable", 107);
 +		addMapping(EntityIrregularity.class, "Irregularity", 108);
 +		addMapping(EntityLongVirusMan.class, "LongVirusMan", 109);
++		addMapping(EntityNoName.class, "NoName", 110);
  	}
  }
 --- /dev/null
@@ -2241,6 +2255,90 @@
 +		super(new ModelThatVirus(0.0F), 0.5F);
 +	}
 +
++}
+--- /dev/null
++++ net/minecraft/src/ModelNoName.java
+@@ -1,0 +1,81 @@
++package net.minecraft.src;
++
++public class ModelNoName extends ModelBase {
++	private ModelRenderer body;
++	private ModelRenderer head;
++	private ModelRenderer rightLeg;
++	private ModelRenderer rightArm;
++	private ModelRenderer rightArm_r1;
++	private ModelRenderer leftArm;
++	private ModelRenderer leftArm_r1;
++	private ModelRenderer leftLeg;
++
++	public ModelNoName() {
++		this(0.0F);
++	}
++
++	public ModelNoName(float var1) {
++		this(var1, 0.0F);
++	}
++
++	public ModelNoName(float var1, float var2) {
++		textureWidth = 64;
++		textureHeight = 32;
++
++		body = new ModelRenderer(this);
++		body.setRotationPoint(0.0F, 24.0F, 0.0F);
++		this.body.setTextureOffset(0, 0).addBox(-2.0F, -56.0F, -2.0F, 4, 28, 4, 0.0F);
++
++		head = new ModelRenderer(this);
++		head.setRotationPoint(0.0F, 24.0F, 0.0F);
++		this.head.setTextureOffset(0, 0).addBox(-2.0F, -84.0F, -2.0F, 4, 28, 4, 0.0F);
++
++		rightLeg = new ModelRenderer(this);
++		rightLeg.setRotationPoint(0.0F, 24.0F, 0.0F);
++		this.rightLeg.setTextureOffset(0, 0).addBox(2.0F, -28.0F, -2.0F, 4, 28, 4, 0.0F);
++
++		rightArm = new ModelRenderer(this);
++		rightArm.setRotationPoint(0.0F, 24.0F, 0.0F);
++
++
++		rightArm_r1 = new ModelRenderer(this);
++		rightArm_r1.setRotationPoint(2.0F, -60.0F, 0.0F);
++		rightArm.addChild(rightArm_r1);
++		setRotation(rightArm_r1, 0.0F, 0.0F, 1.5708F);
++		this.rightArm_r1.setTextureOffset(0, 0).addBox(-2.0F, -28.0F, -2.0F, 4, 28, 4, 0.0F);
++
++		leftArm = new ModelRenderer(this);
++		leftArm.setRotationPoint(0.0F, 24.0F, 0.0F);
++
++
++		leftArm_r1 = new ModelRenderer(this);
++		leftArm_r1.setRotationPoint(-2.0F, -60.0F, 0.0F);
++		leftArm.addChild(leftArm_r1);
++		setRotation(leftArm_r1, 0.0F, 0.0F, -1.5708F);
++		this.leftArm_r1.setTextureOffset(0, 0).addBox(-2.0F, -28.0F, -2.0F, 4, 28, 4, 0.0F);
++
++		leftLeg = new ModelRenderer(this);
++		leftLeg.setRotationPoint(0.0F, 24.0F, 0.0F);
++		this.leftLeg.setTextureOffset(0, 0).addBox(-6.0F, -28.0F, -2.0F, 4, 28, 4, 0.0F);
++	}
++
++	public void render(Entity entity, float f, float f1, float f2, float f3, float f4, float f5) {
++		this.setRotationAngles(f, f1, f2, f3, f4, f5, entity);
++		body.render(f5);
++		head.render(f5);
++		rightLeg.render(f5);
++		rightArm.render(f5);
++		leftArm.render(f5);
++		leftLeg.render(f5);
++	}
++
++	public void setRotationAngles(float f, float f1, float f2, float f3, float f4, float f5, Entity entity) {
++
++	}
++
++	public void setRotation(ModelRenderer modelRenderer, float x, float y, float z) {
++		modelRenderer.rotateAngleX = x;
++		modelRenderer.rotateAngleY = y;
++		modelRenderer.rotateAngleZ = z;
++	}
 +}
 --- /dev/null
 +++ net/minecraft/src/EntityErrorMob.java
@@ -3870,6 +3968,56 @@
  			var5 = var5 + "OS: " + System.getProperty("os.name") + " (" + System.getProperty("os.arch") + ") version " + System.getProperty("os.version") + "\n";
  			var5 = var5 + "Java: " + System.getProperty("java.version") + ", " + System.getProperty("java.vendor") + "\n";
  			var5 = var5 + "VM: " + System.getProperty("java.vm.name") + " (" + System.getProperty("java.vm.info") + "), " + System.getProperty("java.vm.vendor") + "\n";
+--- /dev/null
++++ net/minecraft/src/EntityNoName.java
+@@ -1,0 +1,47 @@
++package net.minecraft.src;
++
++public class EntityNoName extends EntityVirusMob {
++
++	public EntityNoName(World var1) {
++		super(var1);
++		this.texture = "/addmob/noname.png";
++		this.moveSpeed = 1.0F;
++		this.attackStrength = 0;
++	}
++
++	public int getMaxHealth() {
++		return 100;
++	}
++
++	public void onUpdate() {
++		if(!this.worldObj.isRemote) {
++			EntityPlayerSP player = (EntityPlayerSP)this.worldObj.getClosestPlayerToEntity(this, 64.0D);
++			if(player != null) {
++				if(this.getDistanceToEntity(player) <= 24.0F) {
++					this.setDead();
++				}
++			}
++		}
++		super.onUpdate();
++	}
++
++	public void onLivingUpdate() {
++		super.onLivingUpdate();
++	}
++
++	public boolean attackEntityFrom(DamageSource var1, int var2) {
++		return false;
++	}
++
++	protected String getLivingSound() {
++		return null;
++	}
++
++	protected String getHurtSound() {
++		return null;
++	}
++
++	protected String getDeathSound() {
++		return null;
++	}
++}
 --- net/minecraft/client/Minecraft.java
 +++ net/minecraft/client/Minecraft.java
 @@ -10,102 +10,8 @@
@@ -4784,7 +4932,7 @@
  			var15.setRGB(0, 0, var2, var3, imageData, 0, var2);
 --- net/minecraft/src/BiomeGenBase.java
 +++ net/minecraft/src/BiomeGenBase.java
-@@ -60,6 +60,11 @@
+@@ -60,6 +60,12 @@
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityPig.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityChicken.class, 10, 4, 4));
  		this.spawnableCreatureList.add(new SpawnListEntry(EntityCow.class, 8, 4, 4));
@@ -4793,6 +4941,7 @@
 +		this.spawnableCreatureList.add(new SpawnListEntry(EntityWorldArchiveMan.class, 6, 1, 4));
 +		this.spawnableCreatureList.add(new SpawnListEntry(EntityVirusMan.class, 6, 1, 4));
 +		this.spawnableCreatureList.add(new SpawnListEntry(EntityThatVirus.class, 6, 1, 4));
++		this.spawnableCreatureList.add(new SpawnListEntry(EntityNoName.class, 12, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySpider.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntityZombie.class, 10, 4, 4));
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySkeleton.class, 10, 4, 4));
