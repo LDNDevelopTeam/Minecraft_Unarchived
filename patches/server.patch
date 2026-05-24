@@ -293,7 +293,7 @@
 +}
 --- /dev/null
 +++ net/minecraft/src/EntityVirusMob.java
-@@ -1,0 +1,98 @@
+@@ -1,0 +1,72 @@
 +package net.minecraft.src;
 +
 +public abstract class EntityVirusMob extends EntityCreature implements IMob {
@@ -357,10 +357,6 @@
 +
 +	}
 +
-+	public float getBlockPathWeight(int var1, int var2, int var3) {
-+		return 0.5F - this.worldObj.getLightBrightness(var1, var2, var3);
-+	}
-+
 +	public void writeEntityToNBT(NBTTagCompound var1) {
 +		super.writeEntityToNBT(var1);
 +	}
@@ -369,28 +365,6 @@
 +		super.readEntityFromNBT(var1);
 +	}
 +
-+	protected boolean isValidLightLevel() {
-+		int var1 = MathHelper.floor_double(this.posX);
-+		int var2 = MathHelper.floor_double(this.boundingBox.minY);
-+		int var3 = MathHelper.floor_double(this.posZ);
-+		if(this.worldObj.getSavedLightValue(EnumSkyBlock.Sky, var1, var2, var3) > this.rand.nextInt(32)) {
-+			return false;
-+		} else {
-+			int var4 = this.worldObj.getBlockLightValue(var1, var2, var3);
-+			if(this.worldObj.isThundering()) {
-+				int var5 = this.worldObj.skylightSubtracted;
-+				this.worldObj.skylightSubtracted = 10;
-+				var4 = this.worldObj.getBlockLightValue(var1, var2, var3);
-+				this.worldObj.skylightSubtracted = var5;
-+			}
-+
-+			return var4 <= this.rand.nextInt(8);
-+		}
-+	}
-+
-+	public boolean getCanSpawnHere() {
-+		return this.isValidLightLevel() && super.getCanSpawnHere();
-+	}
 +}
 --- /dev/null
 +++ net/minecraft/src/Packet81Sound.java
