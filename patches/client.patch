@@ -336,6 +336,20 @@
 +		return;
 +	}
 +}
+--- net/minecraft/src/EnumOptionsMappingHelper.java
++++ net/minecraft/src/EnumOptionsMappingHelper.java
+@@ -34,5 +34,11 @@
+ 		} catch (NoSuchFieldError var1) {
+ 		}
+ 
++		try {
++			enumOptionsMappingHelperArray[EnumOptions.VIRUS.ordinal()] = 7;
++		} catch (NoSuchFieldError var6) {
++		}
++
++
+ 	}
+ }
 --- net/minecraft/src/WorldGenTallGrass.java
 +++ net/minecraft/src/WorldGenTallGrass.java
 @@ -13,6 +13,7 @@
@@ -1906,6 +1920,17 @@
 +        return this.enabled && this.drawButton && var2 >= this.xPosition && var3 >= this.yPosition && var2 < this.xPosition + this.field_52008_a && var3 < this.yPosition + this.field_52007_b;
 +    }
  }
+--- net/minecraft/src/GuiOptions.java
++++ net/minecraft/src/GuiOptions.java
+@@ -4,7 +4,7 @@
+ 	private GuiScreen parentScreen;
+ 	protected String screenTitle = "Options";
+ 	private GameSettings options;
+-	private static EnumOptions[] relevantOptions = new EnumOptions[]{EnumOptions.MUSIC, EnumOptions.SOUND, EnumOptions.INVERT_MOUSE, EnumOptions.SENSITIVITY, EnumOptions.FOV, EnumOptions.DIFFICULTY};
++	private static EnumOptions[] relevantOptions = new EnumOptions[]{EnumOptions.MUSIC, EnumOptions.SOUND, EnumOptions.INVERT_MOUSE, EnumOptions.SENSITIVITY, EnumOptions.FOV, EnumOptions.DIFFICULTY, EnumOptions.VIRUS};
+ 
+ 	public GuiOptions(GuiScreen var1, GameSettings var2) {
+ 		this.parentScreen = var1;
 --- net/minecraft/src/GuiButtonLanguage.java
 +++ net/minecraft/src/GuiButtonLanguage.java
 @@ -9,16 +9,64 @@
@@ -4328,8 +4353,8 @@
  								this.renderEngine.refreshTextures();
  							}
  
-+							if(Keyboard.isKeyDown(Keyboard.KEY_F6)) {
-+								//this.theWorld.worldRandomEvent.event8(this.thePlayer);
++							if(Keyboard.isKeyDown(Keyboard.KEY_F6) && this.gameSettings.Virus && this.isMultiplayerWorld()) {
++								this.theWorld.worldRandomEvent.event8(this.thePlayer);
 +							}
 +
  							if(Keyboard.getEventKey() == Keyboard.KEY_F && Keyboard.isKeyDown(Keyboard.KEY_F3)) {
@@ -5036,13 +5061,14 @@
  		this.spawnableMonsterList.add(new SpawnListEntry(EntitySkeleton.class, 10, 4, 4));
 --- net/minecraft/src/EnumOptions.java
 +++ net/minecraft/src/EnumOptions.java
-@@ -17,7 +17,8 @@
+@@ -17,7 +17,9 @@
  	AMBIENT_OCCLUSION("options.ao", false, true),
  	GUI_SCALE("options.guiScale", false, false),
  	RENDER_CLOUDS("options.renderClouds", false, true),
 -	PARTICLES("options.particles", false, false);
 +	PARTICLES("options.particles", false, false),
-+	CRASHEDGUI("Crashed 744", false, false);
++	CRASHEDGUI("Crashed 744", false, false),
++	VIRUS("VIRUS", false, true);
  
  	private final boolean enumFloat;
  	private final boolean enumBoolean;
@@ -5837,15 +5863,16 @@
  	private static final String[] PARTICLES = new String[]{"options.particles.all", "options.particles.decreased", "options.particles.minimal"};
  	private static final String[] LIMIT_FRAMERATES = new String[]{"performance.max", "performance.balanced", "performance.powersaver"};
  	public float musicVolume = 1.0F;
-@@ -59,6 +60,7 @@
+@@ -59,6 +60,8 @@
  	public int guiScale = 0;
  	public int particleSetting = 0;
  	public String language = "en_US";
 +	public int Crashed = 0;
++	public boolean Virus = false;
  
  	public GameSettings(Minecraft var1, File var2) {
  		this.mc = var1;
-@@ -166,6 +168,10 @@
+@@ -166,6 +169,14 @@
  			this.mc.renderGlobal.loadRenderers();
  		}
  
@@ -5853,10 +5880,23 @@
 +			this.Crashed = this.Crashed + var2 & 1;
 +		}
 +
++		if(var1 == EnumOptions.VIRUS) {
++			this.Virus = !this.Virus;
++		}
++
  		this.saveOptions();
  	}
  
-@@ -211,7 +217,7 @@
+@@ -187,6 +198,8 @@
+ 			return this.ambientOcclusion;
+ 		case 6:
+ 			return this.clouds;
++		case 7:
++			return this.Virus;
+ 		default:
+ 			return false;
+ 		}
+@@ -211,7 +224,7 @@
  			boolean var4 = this.getOptionOrdinalValue(var1);
  			return var4 ? var3 + var2.translateKey("options.on") : var3 + var2.translateKey("options.off");
  		} else {
@@ -5865,7 +5905,7 @@
  		}
  	}
  
-@@ -319,6 +325,11 @@
+@@ -319,6 +332,15 @@
  							this.keyBindings[var4].keyCode = Integer.parseInt(var3[1]);
  						}
  					}
@@ -5874,14 +5914,19 @@
 +						this.Crashed = Integer.parseInt(var3[1]);
 +					}
 +
++					if(var3[0].equals("Virus")) {
++						this.Virus = var3[1].equals("true");
++					}
++
  				} catch (Exception var5) {
  					System.out.println("Skipping bad option: " + var2);
  				}
-@@ -357,6 +368,7 @@
+@@ -357,6 +379,8 @@
  			var1.println("skin:" + this.skin);
  			var1.println("lastServer:" + this.lastServer);
  			var1.println("lang:" + this.language);
 +			var1.println("CrashedGUI:" + this.Crashed);
++			var1.println("Virus:" + this.Virus);
  
  			for(int var2 = 0; var2 < this.keyBindings.length; ++var2) {
  				var1.println("key_" + this.keyBindings[var2].keyDescription + ":" + this.keyBindings[var2].keyCode);
