@@ -801,7 +801,7 @@
 +	public EntityErrorMob(World var1) {
 +		super(var1);
 +		this.texture = "/addmob/ErrorMob/errormob0.png";
-+		this.moveSpeed = 0.23F;
++		this.moveSpeed = 1.0F;
 +		this.attackStrength = 3;
 +	}
 +

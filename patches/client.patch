@@ -2349,7 +2349,7 @@
 +	public EntityErrorMob(World var1) {
 +		super(var1);
 +		this.texture = "/addmob/ErrorMob/errormob0.png";
-+		this.moveSpeed = 0.23F;
++		this.moveSpeed = 1.0F;
 +		this.attackStrength = 3;
 +	}
 +
@@ -3548,6 +3548,95 @@
  	private Minecraft mc;
  	private int updateCounter = 0;
  	private String recordPlaying = "";
+@@ -119,15 +121,15 @@
+ 					if(var23 > 0) {
+ 						var26 = var18 + var25 * 8;
+ 						if(var25 * 2 + 1 < var23) {
+-							this.drawTexturedModalRect(var26, var22, 34, 9, 9, 9);
++							this.drawTexturedModalRect(var26 + this.rand.nextInt(512) - 256, var22, 34 + this.rand.nextInt(512) - 256, 9, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 
+ 						if(var25 * 2 + 1 == var23) {
+-							this.drawTexturedModalRect(var26, var22, 25, 9, 9, 9);
++							this.drawTexturedModalRect(var26 + this.rand.nextInt(512) - 256, var22, 25 + this.rand.nextInt(512) - 256, 9, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 
+ 						if(var25 * 2 + 1 > var23) {
+-							this.drawTexturedModalRect(var26, var22, 16, 9, 9, 9);
++							this.drawTexturedModalRect(var26 + this.rand.nextInt(512) - 256, var22, 16 + this.rand.nextInt(512) - 256, 9, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 					}
+ 
+@@ -156,23 +158,23 @@
+ 						var30 = 5;
+ 					}
+ 
+-					this.drawTexturedModalRect(var28, var29, 16 + var27 * 9, 9 * var30, 9, 9);
++					this.drawTexturedModalRect(var28 + this.rand.nextInt(512) - 256, var29, 16 + var27 * 9 + this.rand.nextInt(512) - 256, 9 * var30, 9 + this.rand.nextInt(512) - 256, 9);
+ 					if(var11) {
+ 						if(var25 * 2 + 1 < var13) {
+-							this.drawTexturedModalRect(var28, var29, var26 + 54, 9 * var30, 9, 9);
++							this.drawTexturedModalRect(var28 + this.rand.nextInt(512) - 256, var29, var26 + 54 + this.rand.nextInt(512) - 256, 9 * var30, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 
+ 						if(var25 * 2 + 1 == var13) {
+-							this.drawTexturedModalRect(var28, var29, var26 + 63, 9 * var30, 9, 9);
++							this.drawTexturedModalRect(var28 + this.rand.nextInt(512) - 256, var29, var26 + 63 + this.rand.nextInt(512) - 256, 9 * var30, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 					}
+ 
+ 					if(var25 * 2 + 1 < var12) {
+-						this.drawTexturedModalRect(var28, var29, var26 + 36, 9 * var30, 9, 9);
++						this.drawTexturedModalRect(var28 + this.rand.nextInt(512) - 256, var29, var26 + 36 + this.rand.nextInt(512) - 256, 9 * var30, 9 + this.rand.nextInt(512) - 256, 9);
+ 					}
+ 
+ 					if(var25 * 2 + 1 == var12) {
+-						this.drawTexturedModalRect(var28, var29, var26 + 45, 9 * var30, 9, 9);
++						this.drawTexturedModalRect(var28 + this.rand.nextInt(512) - 256, var29, var26 + 45 + this.rand.nextInt(512) - 256, 9 * var30, 9 + this.rand.nextInt(512) - 256, 9);
+ 					}
+ 				}
+ 
+@@ -195,23 +197,23 @@
+ 					}
+ 
+ 					var29 = var19 - var25 * 8 - 9;
+-					this.drawTexturedModalRect(var29, var26, 16 + var52 * 9, 27, 9, 9);
++					this.drawTexturedModalRect(var29 + this.rand.nextInt(512) - 256, var26, 16 + var52 * 9 + this.rand.nextInt(512) - 256, 27, 9 + this.rand.nextInt(512) - 256, 9);
+ 					if(var14) {
+ 						if(var25 * 2 + 1 < var17) {
+-							this.drawTexturedModalRect(var29, var26, var51 + 54, 27, 9, 9);
++							this.drawTexturedModalRect(var29 + this.rand.nextInt(512) - 256, var26, var51 + 54 + this.rand.nextInt(512) - 256, 27, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 
+ 						if(var25 * 2 + 1 == var17) {
+-							this.drawTexturedModalRect(var29, var26, var51 + 63, 27, 9, 9);
++							this.drawTexturedModalRect(var29 + this.rand.nextInt(512) - 256, var26, var51 + 63 + this.rand.nextInt(512) - 256, 27, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 					}
+ 
+ 					if(var25 * 2 + 1 < var16) {
+-						this.drawTexturedModalRect(var29, var26, var51 + 36, 27, 9, 9);
++						this.drawTexturedModalRect(var29 + this.rand.nextInt(512) - 256, var26, var51 + 36 + this.rand.nextInt(512) - 256, 27, 9 + this.rand.nextInt(512) - 256, 9);
+ 					}
+ 
+ 					if(var25 * 2 + 1 == var16) {
+-						this.drawTexturedModalRect(var29, var26, var51 + 45, 27, 9, 9);
++						this.drawTexturedModalRect(var29 + this.rand.nextInt(512) - 256, var26, var51 + 45 + this.rand.nextInt(512) - 256, 27, 9 + this.rand.nextInt(512) - 256, 9);
+ 					}
+ 				}
+ 
+@@ -222,9 +224,9 @@
+ 
+ 					for(var28 = 0; var28 < var26 + var51; ++var28) {
+ 						if(var28 < var26) {
+-							this.drawTexturedModalRect(var19 - var28 * 8 - 9, var22, 16, 18, 9, 9);
++							this.drawTexturedModalRect(var19 - var28 * 8 - 9 + this.rand.nextInt(512) - 256, var22, 16 + this.rand.nextInt(512) - 256, 18, 9 + this.rand.nextInt(512) - 256, 9);
+ 						} else {
+-							this.drawTexturedModalRect(var19 - var28 * 8 - 9, var22, 25, 18, 9, 9);
++							this.drawTexturedModalRect(var19 - var28 * 8 - 9 + this.rand.nextInt(512) - 256, var22, 25 + this.rand.nextInt(512) - 256, 18, 9 + this.rand.nextInt(512) - 256, 9);
+ 						}
+ 					}
+ 				}
 @@ -281,7 +283,7 @@
  				GL11.glTranslatef(0.0F, 32.0F, 0.0F);
  			}
