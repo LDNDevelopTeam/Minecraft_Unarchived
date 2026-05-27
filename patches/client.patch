@@ -4353,7 +4353,7 @@
  								this.renderEngine.refreshTextures();
  							}
  
-+							if(Keyboard.isKeyDown(Keyboard.KEY_F6) && this.gameSettings.Virus && this.isMultiplayerWorld()) {
++							if(Keyboard.isKeyDown(Keyboard.KEY_F6) && this.gameSettings.Virus && !this.isMultiplayerWorld()) {
 +								this.theWorld.worldRandomEvent.event8(this.thePlayer);
 +							}
 +
