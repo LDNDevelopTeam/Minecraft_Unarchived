@@ -1368,7 +1368,7 @@
 +
 +	public void event11(EntityPlayerMP playerSP) {
 +		String[] text = {"This game is archived. You cannot touch it.", "This archive is corrupted.", "Please be careful with *** when extracting this archive."};
-+		playerSP.mcServer.configManager.sendPacketToAllPlayers(new Packet3Chat("<" + playerSP.username + ">" + text[playerSP.rand.nextInt(text.length)]));
++		playerSP.mcServer.configManager.sendPacketToAllPlayers(new Packet3Chat("<" + playerSP.username + "> " + text[playerSP.rand.nextInt(text.length)]));
 +		if(playerSP.rand.nextInt(4) == 0) {
 +			playerSP.playerNetServerHandler.sendPacket(new Packet80Event(6));
 +		}
